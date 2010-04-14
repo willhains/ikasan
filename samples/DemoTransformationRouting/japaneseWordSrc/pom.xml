@@ -23,6 +23,21 @@
 		<filters>
 			<filter>module.properties</filter>
 		</filters>
+        <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      </plugins>
 
 		
 	</build>
@@ -31,7 +46,8 @@
       <repository>
           <id>ikasaneip-releases</id>
           <name>Ikasan EIP Releases Repository</name>
-          <url>http://oss.sonatype.org/content/repositories/ikasaneip-releases</url>
+          <!-- <url>http://oss.sonatype.org/content/repositories/ikasaneip-releases</url> -->
+          <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
       </repository>
       <snapshotRepository>
           <id>ikasaneip-snapshots</id>
