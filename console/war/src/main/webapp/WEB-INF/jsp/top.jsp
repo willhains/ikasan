@@ -92,7 +92,7 @@
                 <ul>
                     <li class="first"><a href="<c:url value='/home.htm'/>"><fmt:message key="menu_home_link"/></a></li>
                     <li><a href="<c:url value='/events/newSearch.htm'/>"><fmt:message key="menu_events_link"/></a></li>
-                    <li><a href="<c:url value='/users/myAccount.htm'/>"><fmt:message key="menu_account_link"/></a></li>
+                    <!-- <li><a href="<c:url value='/users/myAccount.htm'/>"><fmt:message key="menu_account_link"/></a></li> -->
                     <%-- Spring based security around the admin pages --%>
                     <security:authorize ifAllGranted="ROLE_ADMIN">
                     <li class="last"><a href="<c:url value='/admin/admin.htm'/>"><fmt:message key="menu_admin_link"/></a></li>
@@ -101,13 +101,13 @@
             </div>
 
             <!-- 
-            	TODO get the image working in with the word 'Support', unfortunately HTML rears its ugly head 
-            	again when trying to get this to work cleanly, it pushes the whole nav bar out by 1px forcing it to wrap
-           	-->
+                TODO get the image working in with the word 'Support', unfortunately HTML rears its ugly head 
+                again when trying to get this to work cleanly, it pushes the whole nav bar out by 1px forcing it to wrap
+            -->
             <div id="minorNavigation">
                 <ul>
                     <li class="first"><a href="<c:url value='/support.htm'/>"><fmt:message key="menu_support_link"/><!--TODO <img class="helpIcon" src="/console/images/Icon_Help_sml2.png" alt="?" /> --></a></li>
-                    <li class="username"><fmt:message key="menu_logged_in_as"/> <security:authentication property="principal.username" /> </li>
+                    <li class="username"><fmt:message key="menu_logged_in_as"/> <%-- TODO, the two options need to be merged into one <security:authentication property="principal.username" /> --%> <security:authentication property="principal" /> </li>
                     <li class="last"><a href="<c:url value="/j_spring_security_logout"/>"><fmt:message key="menu_logout_link"/></a></li>
                 </ul>
             </div>

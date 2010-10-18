@@ -133,6 +133,7 @@
                             </tr>
                         </table>
                     </form>
+                    <%--
                     <form id="forgotPasswordForm" action="<c:url value='/users/forgotPassword.htm'/>" method="get">
                         <table class="loginTable">
                             <tr>
@@ -141,6 +142,7 @@
                             </tr>
                         </table>
                     </form>
+                    --%>
 
                     <%-- 
                         This form-login-page form is also used as the

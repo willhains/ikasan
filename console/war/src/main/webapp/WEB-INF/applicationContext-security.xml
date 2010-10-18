@@ -43,6 +43,7 @@
  Author:  Ikasan Development Team
 
 -->
+<!-- We reference a 2.0.4.xsd as the 2.0.5.RELEASE xsd does not exist -->
 <beans:beans xmlns="http://www.springframework.org/schema/security"
 	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
@@ -51,8 +52,9 @@
         Declare the access denied page & force people to go to the login screen
         if they try to go elsewhere first.
      -->
-    <http access-denied-page="/accessDenied.jsp" auto-config='true'>
-        <!-- For login.jsp, changePassword.jsp, sendPassword.htm, css and images we don't apply security -->
+    <!-- We don't want remember me functionality, so auto-config is set to false -->
+    <http access-denied-page="/accessDenied.jsp" auto-config='false'>
+        <!-- For certain pages and resources we don't apply security -->
     	<intercept-url pattern="/login.jsp*" filters="none" />
         <intercept-url pattern="/users/forgotPassword.htm" filters="none" />
         <intercept-url pattern="/users/sendPassword.htm" filters="none" />
@@ -65,12 +67,34 @@
     	<intercept-url pattern="/**" access="ROLE_USER" />
         <!-- If you fail login then redirect to the login.jsp page but with the extra parameter indicating failure -->
     	<form-login login-page='/login.jsp'	authentication-failure-url='/login.jsp?login_error=1' />
+        <logout />
 	</http>
 
-    <!-- The authentication provider, use the SHA1 encoding for password obscuring -->
-	<authentication-provider user-service-ref="userDetailsService">
-		<password-encoder ref="sha1PasswordEncoder" />
-	</authentication-provider>
+    <!-- The context source for the LDAP/AD server -->
+    <beans:bean id="contextSource"
+        class="org.springframework.security.ldap.DefaultSpringSecurityContextSource">
+        <beans:constructor-arg value="ldap://IPW-DC01L:389/" />
+    </beans:bean>
+ 
+    <!-- The custom LDAP Authentication provider -->
+    <beans:bean id="ldapAuthenticationProvider"
+        class="org.ikasan.console.security.service.authentication.LdapAuthenticationProvider">
+        <beans:constructor-arg ref="userDetailsService" />
+        <beans:property name="authenticator" ref="ldapAuthenticator" />
+        <custom-authentication-provider />
+    </beans:bean>
+
+    <!-- The custom LDAP Authenticator -->
+    <beans:bean id="ldapAuthenticator"
+        class="org.ikasan.console.security.service.authentication.LdapAuthenticatorImpl">
+        <beans:property name="contextFactory" ref="contextSource" />
+        <beans:property name="principalPrefix" value="MIP-LONDON\" />
+    </beans:bean>
+
+    <!--
+        The following beans are primarily required for post authentication authorisation,
+        e.g. The mapping of Ikasan Groups/Roles to the LDAP/AD Groups
+     -->
 
     <!-- The SHA1 password encoder provider -->
     <beans:bean id="sha1PasswordEncoder" class="org.springframework.security.providers.encoding.ShaPasswordEncoder"/>
