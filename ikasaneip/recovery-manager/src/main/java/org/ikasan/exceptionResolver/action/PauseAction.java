@@ -41,7 +41,7 @@ package org.ikasan.exceptionResolver.action;
  * ====================================================================
  */
 /**
- * Exception action indicating the flow should be paused.
+ * Exception action indicating the Initiator should be paused
  *
  * @author Ikasan Development Team
  */
