@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.ikasan.flow.event.FlowEventFactory;
 import org.ikasan.spec.component.endpoint.Consumer;
 import org.ikasan.spec.configuration.ConfiguredResource;
@@ -67,33 +66,38 @@ import org.ikasan.spec.monitor.Monitor;
 import org.ikasan.spec.monitor.MonitorSubject;
 import org.ikasan.spec.monitor.Notifier;
 import org.ikasan.spec.recovery.RecoveryManager;
+import org.ikasan.spec.recovery.RecoveryManagerFlowController;
 import org.ikasan.spec.serialiser.SerialiserFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of a Flow
  * 
  * @author Ikasan Development Team
  */
-public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>, MonitorSubject, IsErrorReportingServiceAware
+public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?, ?>>, MonitorSubject,
+IsErrorReportingServiceAware, RecoveryManagerFlowController
 {
-    /** logger instance */
-    private static Logger logger = Logger.getLogger(VisitingInvokerFlow.class);
-    
+
+    /** Logger */
+    private final static Logger logger = LoggerFactory.getLogger(VisitingInvokerFlow.class);
+
     /** running state string constant */
     private static String RUNNING = "running";
-    
+
     /** stopped state string constant */
     private static String STOPPED = "stopped";
-    
+
     /** recovering state string constant */
     private static String RECOVERING = "recovering";
-    
+
     /** stoppedInError state string constant */
     private static String STOPPED_IN_ERROR = "stoppedInError";
-    
+
     /** paused state string constant */
     private static String PAUSED = "paused";
-    
+
     /** Name of this flow */
     private String name;
 
@@ -111,10 +115,10 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
 
     /** stateful recovery manager implementation */
     private RecoveryManager<FlowEvent<?,?>> recoveryManager;
-    
+
     /** startup failure flag */
     private boolean flowInitialisationFailure = false;
-    
+
     /** has the consumer been paused */
     private boolean consumerPaused = false;
 
@@ -145,8 +149,8 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
      * @param exclusionService
      */
     public VisitingInvokerFlow(String name, String moduleName, FlowConfiguration flowConfiguration,
-                               RecoveryManager<FlowEvent<?,?>> recoveryManager,
-                               ExclusionService exclusionService, SerialiserFactory serialiserFactory)
+            RecoveryManager<FlowEvent<?,?>> recoveryManager,
+            ExclusionService exclusionService, SerialiserFactory serialiserFactory)
     {
         this(name, moduleName, flowConfiguration, null, recoveryManager, exclusionService, serialiserFactory);
     }
@@ -161,21 +165,21 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
      * @param exclusionService
      */
     public VisitingInvokerFlow(String name, String moduleName, FlowConfiguration flowConfiguration, ExclusionFlowConfiguration exclusionFlowConfiguration,
-                               RecoveryManager<FlowEvent<?,?>> recoveryManager,
-                               ExclusionService exclusionService, SerialiserFactory serialiserFactory)
+            RecoveryManager<FlowEvent<?,?>> recoveryManager,
+            ExclusionService exclusionService, SerialiserFactory serialiserFactory)
     {
         this.name = name;
         if(name == null)
         {
             throw new IllegalArgumentException("name cannot be 'null'");
         }
-        
+
         this.moduleName = moduleName;
         if(moduleName == null)
         {
             throw new IllegalArgumentException("moduleName cannot be 'null'");
         }
-        
+
         this.flowConfiguration = flowConfiguration;
         if(flowConfiguration == null)
         {
@@ -195,7 +199,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         {
             throw new IllegalArgumentException("exclusionService cannot be 'null'");
         }
-        
+
         this.serialiserFactory = serialiserFactory;
         if(serialiserFactory == null)
         {
@@ -230,7 +234,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
     {
         this.managedResourceRecoveryManagerFactory = managedResourceRecoveryManagerFactory;
     }
-    
+
     /**
      * Start this flow
      */
@@ -243,8 +247,8 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             if(isRunning())
             {
                 logger.info("flow [" + name + "] module ["
-                    + moduleName
-                    + "] is already running. Ignoring start request.");
+                        + moduleName
+                        + "] is already running. Ignoring start request.");
                 return;
             }
 
@@ -276,7 +280,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         try
         {
             this.flowInitialisationFailure = false;
-
+            this.recoveryManager.setRecoveryManagerFlowController(this);
             this.recoveryManager.initialise();
 
             // configure any registered monitors marked as configured
@@ -397,7 +401,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             this.notifyMonitor();
         }
     }
-    
+
     public void resume()
     {
         try
@@ -405,11 +409,10 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             if(isRunning())
             {
                 logger.info("flow [" + name + "] module [" 
-                    + moduleName 
-                    + "] is already running. Ignoring resume request.");
+                        + moduleName 
+                        + "] is already running. Ignoring resume request.");
                 return;
             }
-
             startConsumer();
             logger.info("Resumed Flow[" + this.name + "] in Module[" + this.moduleName + "]");
         }
@@ -454,7 +457,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
 
         // start the consumer
         Consumer<EventListener<FlowEvent<?,?>>,EventFactory> consumer = consumerFlowElement.getFlowComponent();
-        consumer.setListener( (EventListener<FlowEvent<?,?>>)this );
+        consumer.setListener( this );
 
         // if event factory has not been set on the consumer then set the default
         if(consumer.getEventFactory() == null)
@@ -471,7 +474,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             this.recoveryManager.recover(consumerFlowElement.getComponentName(), e);
         }
     }
-    
+
     /**
      * Stop all managed resources from left to right.
      */
@@ -524,7 +527,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
                         + flowElement.getComponentName() + "]...");
                 managedResource.startManagedResource();
                 logger.info("Successfully started managed component ["
-                    + flowElement.getComponentName() + "]");
+                        + flowElement.getComponentName() + "]");
             }
             catch(RuntimeException e)
             {
@@ -572,7 +575,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         {
             this.notifyMonitor();
         }
-        
+
     }
 
     /**
@@ -618,14 +621,14 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             this.notifyMonitor();
         }
     }
-    
+
     /* (non-Javadoc)
-	 * @see org.ikasan.spec.event.EventListener#invoke(org.ikasan.spec.event.Resubmission)
-	 */
-	@Override
-	public void invoke(Resubmission<FlowEvent<?,?>> event)
-	{
-		FlowInvocationContext flowInvocationContext = createFlowInvocationContext();
+     * @see org.ikasan.spec.event.EventListener#invoke(org.ikasan.spec.event.Resubmission)
+     */
+    @Override
+    public void invoke(Resubmission<FlowEvent<?,?>> event)
+    {
+        FlowInvocationContext flowInvocationContext = createFlowInvocationContext();
 
         try
         {
@@ -645,9 +648,9 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         {
             this.notifyMonitor();
         }
-	}
+    }
 
-	private void configureDynamicConfiguredResources(FlowInvocationContext flowInvocationContext)
+    private void configureDynamicConfiguredResources(FlowInvocationContext flowInvocationContext)
     {
         for(FlowElement<DynamicConfiguredResource> flowElement:this.flowConfiguration.getDynamicConfiguredResourceFlowElements())
         {
@@ -662,7 +665,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             }
         }
     }
-    
+
     private void updateDynamicConfiguredResources(FlowInvocationContext flowInvocationContext)
     {
         for(FlowElement<DynamicConfiguredResource> flowElement:this.flowConfiguration.getDynamicConfiguredResourceFlowElements())
@@ -680,7 +683,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
     }
 
     protected void invoke(String moduleName, String flowName, FlowInvocationContext flowInvocationContext,
-                       FlowEvent flowEvent, FlowElement flowElement)
+            FlowEvent flowEvent, FlowElement flowElement)
     {
         while (flowElement != null)
         {
@@ -713,7 +716,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
             this.notifyMonitor();
         }
     }
-    
+
     /**
      * Notification to all registered <code>MonitorListener</code> of the current state of the <code>Initiator</code>
      */
@@ -762,7 +765,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         {
             return STOPPED_IN_ERROR;
         }
-        else if(this.consumerPaused)
+        else if (this.consumerPaused)
         {
             return PAUSED;
         }
@@ -777,7 +780,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
     protected FlowInvocationContext createFlowInvocationContext()
     {
         return new DefaultFlowInvocationContext();
-    }
+    } 
 
     /* (non-Javadoc)
      * @see org.ikasan.spec.flow.Flow#getFlowElements()
@@ -808,10 +811,10 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
      * Set the flow event listener
      * @param flowEventListener
      */
-	public void setFlowListener(FlowEventListener flowEventListener)
-	{
-		this.flowEventListener = flowEventListener;
-	}
+    public void setFlowListener(FlowEventListener flowEventListener)
+    {
+        this.flowEventListener = flowEventListener;
+    }
 
     @Override
     public void setErrorReportingService(ErrorReportingService errorReportingService)
@@ -829,7 +832,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
     {
         // cache of managed resource recovery managers
         private Map<String,ManagedResourceRecoveryManager> managedResourceRecoveryManagers = new HashMap<String,ManagedResourceRecoveryManager>();
-        
+
         /**
          * Get the named managed resource recovery manager
          * @param name
@@ -843,7 +846,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
                 managedResourceRecoveryManager = new ManagedResourceRecoveryManagerImpl(name);
                 managedResourceRecoveryManagers.put(name, managedResourceRecoveryManager);
             }
-            
+
             return managedResourceRecoveryManager;
         }
 
@@ -856,7 +859,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         {
             /** name of this managed resource recovery manager */
             private String name;
-            
+
             /**
              * Constructor
              * @param name
@@ -869,7 +872,7 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
                     throw new IllegalArgumentException("name cannot be 'null'");
                 }
             }
-            
+
             /*
              * (non-Javadoc)
              * @see org.ikasan.spec.management.ManagedResourceRecoveryManager#recover(java.lang.Throwable)
@@ -913,22 +916,32 @@ public class VisitingInvokerFlow implements Flow, EventListener<FlowEvent<?,?>>,
         }
     }
 
-	/* (non-Javadoc)
-	 * @see org.ikasan.spec.flow.Flow#getConsumerFlowElement()
-	 */
-	@Override
-	public FlowConfiguration getFlowConfiguration()
-	{
-		return this.flowConfiguration;
-	}
+    /* (non-Javadoc)
+     * @see org.ikasan.spec.flow.Flow#getConsumerFlowElement()
+     */
+    @Override
+    public FlowConfiguration getFlowConfiguration()
+    {
+        return this.flowConfiguration;
+    }
 
-	/* (non-Javadoc)
-	 * @see org.ikasan.spec.flow.Flow#getSerialiserFactory()
-	 */
-	@Override
-	public SerialiserFactory getSerialiserFactory()
-	{
-		return this.serialiserFactory;
-	}
+    /* (non-Javadoc)
+     * @see org.ikasan.spec.flow.Flow#getSerialiserFactory()
+     */
+    @Override
+    public SerialiserFactory getSerialiserFactory()
+    {
+        return this.serialiserFactory;
+    }
 
+    @Override
+    public void pauseFlowWhileInRecovery()
+    {
+        pause();
+    }
+
+    public void registerRecoveryManagerFlowController()
+    {
+        this.recoveryManager.setRecoveryManagerFlowController(this);
+    }
 }

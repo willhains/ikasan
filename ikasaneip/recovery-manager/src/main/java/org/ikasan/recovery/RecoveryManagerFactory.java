@@ -60,19 +60,19 @@ public class RecoveryManagerFactory
 {
     /** Quartz Scheduler */
     private Scheduler scheduler;
-    
+
     /** Ikasan extended Quartz job factory */
     private ScheduledJobFactory scheduledJobFactory;
-    
+
     /**
      * Default implementation of a RecoveryManagerFactory instance.
      * @return RecoveryManagerFactory
      */
     public static RecoveryManagerFactory getInstance()
     {
-    	return new RecoveryManagerFactory(SchedulerFactory.getInstance().getScheduler(), CachingScheduledJobFactory.getInstance());
+        return new RecoveryManagerFactory(SchedulerFactory.getInstance().getScheduler(), CachingScheduledJobFactory.getInstance());
     }
-    
+
     /**
      * Constructor
      * @param scheduler
@@ -101,9 +101,11 @@ public class RecoveryManagerFactory
      * @param consumer
      * @return RecoveryManager
      */
-    public RecoveryManager getRecoveryManager(String flowName, String moduleName, Consumer consumer, ExclusionService exclusionService, ErrorReportingService errorReportingService)
+    public RecoveryManager getRecoveryManager(String flowName, String moduleName, Consumer consumer,
+            ExclusionService exclusionService, ErrorReportingService errorReportingService)
     {
-        return new ScheduledRecoveryManager(scheduler, scheduledJobFactory, flowName, moduleName, consumer, exclusionService, errorReportingService);
+        return new ScheduledRecoveryManager(scheduler, scheduledJobFactory, flowName, moduleName, consumer,
+            exclusionService, errorReportingService);
     }
-    
+
 }
