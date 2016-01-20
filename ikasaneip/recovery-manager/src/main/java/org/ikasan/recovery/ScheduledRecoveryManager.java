@@ -40,9 +40,23 @@
  */
 package org.ikasan.recovery;
 
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+import static org.quartz.TriggerKey.triggerKey;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.ikasan.exceptionResolver.ExceptionResolver;
-import org.ikasan.exceptionResolver.action.*;
+import org.ikasan.exceptionResolver.action.ExceptionAction;
+import org.ikasan.exceptionResolver.action.ExcludeEventAction;
+import org.ikasan.exceptionResolver.action.IgnoreAction;
+import org.ikasan.exceptionResolver.action.PauseAction;
+import org.ikasan.exceptionResolver.action.RetryAction;
+import org.ikasan.exceptionResolver.action.ScheduledRetryAction;
+import org.ikasan.exceptionResolver.action.StopAction;
 import org.ikasan.scheduler.ScheduledJobFactory;
 import org.ikasan.spec.component.endpoint.Consumer;
 import org.ikasan.spec.error.reporting.ErrorReportingService;
@@ -51,15 +65,16 @@ import org.ikasan.spec.exclusion.ExclusionService;
 import org.ikasan.spec.flow.FlowElement;
 import org.ikasan.spec.management.ManagedResource;
 import org.ikasan.spec.recovery.RecoveryManager;
-import org.quartz.*;
-
-import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-
-import static org.quartz.CronScheduleBuilder.cronSchedule;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
+import org.ikasan.spec.recovery.RecoveryManagerFlowController;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 
 /**
  * Scheduled based stateful Recovery implementation.
@@ -89,28 +104,28 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
 
     /** scheduler */
     private Scheduler scheduler;
-    
+
     /** scheduled job factory for creating Quartz specific jobs */
     private ScheduledJobFactory scheduledJobFactory;
-    
+
     /** flow name */
     private String flowName;
-    
+
     /** module name */
     private String moduleName;
 
     /** exception resolver */
     private ExceptionResolver exceptionResolver;
-    
+
     /** recovery attempts */
     protected int recoveryAttempts;
-    
+
     /** keep a handle on the previous component name comparison */
     private String previousComponentName;
-    
+
     /** keep a handle on the previous action for comparison */
     private ExceptionAction previousExceptionAction;
-    
+
     /** unrecoverable status */
     private boolean isUnrecoverable = false;
 
@@ -123,6 +138,9 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     /** Error Reporting Service */
     private ErrorReportingService errorReportingService;
 
+    /** Flow controller */
+    private RecoveryManagerFlowController flowController;
+
     /**
      * Constructor
      * @param scheduler
@@ -132,7 +150,8 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * @param consumer
      */
     public ScheduledRecoveryManager(Scheduler scheduler, ScheduledJobFactory scheduledJobFactory, String flowName, String moduleName,
-                                    Consumer<?,?> consumer, ExclusionService exclusionService, ErrorReportingService errorReportingService)
+            Consumer<?, ?> consumer, ExclusionService exclusionService,
+            ErrorReportingService errorReportingService)
     {
         this.scheduler = scheduler;
         if(scheduler == null)
@@ -177,10 +196,17 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         }
     }
 
+    @Override 
+    public void setRecoveryManagerFlowController(RecoveryManagerFlowController flowController)
+    {
+        this.flowController = flowController;
+    }
+
     /**
      * Set a specific exception resolver
      * @param exceptionResolver
      */
+    @Override
     public void setResolver(ExceptionResolver exceptionResolver)
     {
         this.exceptionResolver = exceptionResolver;
@@ -190,6 +216,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * Get the specific exception resolver
      * @return exceptionResolver
      */
+    @Override
     public ExceptionResolver getResolver()
     {
         return this.exceptionResolver;
@@ -199,6 +226,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * Are we currently running an active recovery. 
      * @return boolean
      */
+    @Override
     public boolean isRecovering()
     {
         try
@@ -207,7 +235,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             {
                 return true;
             }
-            
+
             return false;
         }
         catch(SchedulerException e)
@@ -231,40 +259,45 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             {
                 this.cancelRecovery();
             }
-            
+
             this.consumer.stop();
             stopManagedResources();
 
             this.isUnrecoverable = true;
             logger.info("Stopped flow [" + flowName +  "] module [" + moduleName + "]");
-            
+
             throw new ForceTransactionRollbackException(action.toString(), throwable);
         }
-
+        // effectively pauses the flow
+        else if(action instanceof PauseAction)
+        {
+            this.flowController.pauseFlowWhileInRecovery();
+            throw new ForceTransactionRollbackException(action.toString(), throwable);
+        }
         // simple delay retry action
         else if(action instanceof RetryAction)
         {
             RetryAction retryAction = (RetryAction)action;
 
-//            if(!this.consumer.isRunning())
-//            {
-//                // consumer has been paused or previously stopped for a reason,
-//                // so do not allow the retry to reactivate the consumer.
-//                // Just want to ensure any changes get rolled back.
-//                if(this.isRecovering())
-//                {
-//                    this.cancelRecovery();
-//                }
-//
-//                this.previousComponentName = componentName;
-//                this.previousExceptionAction = retryAction;
-//
-//                throw new ForceTransactionRollbackException(action.toString() + " ignored on a paused/stopped consumer", throwable);
-//            }
+            //            if(!this.consumer.isRunning())
+            //            {
+            //                // consumer has been paused or previously stopped for a reason,
+            //                // so do not allow the retry to reactivate the consumer.
+            //                // Just want to ensure any changes get rolled back.
+            //                if(this.isRecovering())
+            //                {
+            //                    this.cancelRecovery();
+            //                }
+            //
+            //                this.previousComponentName = componentName;
+            //                this.previousExceptionAction = retryAction;
+            //
+            //                throw new ForceTransactionRollbackException(action.toString() + " ignored on a paused/stopped consumer", throwable);
+            //            }
 
             this.consumer.stop();
             stopManagedResources();
-                
+
             try
             {
                 if(!isRecovering())
@@ -284,7 +317,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
                         startRecovery(retryAction);
                     }
                 }
-                
+
                 this.previousComponentName = componentName;
                 this.previousExceptionAction = retryAction;
             }
@@ -292,7 +325,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             {
                 throw new RuntimeException(e);
             }
-            
+
             throw new ForceTransactionRollbackException(action.toString(), throwable);
         }
 
@@ -301,21 +334,21 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         {
             ScheduledRetryAction scheduledRetryAction = (ScheduledRetryAction)action;
 
-//            if(!this.consumer.isRunning())
-//            {
-//                // consumer has been paused or previously stopped for a reason,
-//                // so do not allow the retry to reactivate the consumer.
-//                // Just want to ensure any changes get rolled back.
-//                if(this.isRecovering())
-//                {
-//                    this.cancelRecovery();
-//                }
-//
-//                this.previousComponentName = componentName;
-//                this.previousExceptionAction = scheduledRetryAction;
-//
-//                throw new ForceTransactionRollbackException(action.toString() + " ignoring retry on a paused/stopped consumer.", throwable);
-//            }
+            //            if(!this.consumer.isRunning())
+            //            {
+            //                // consumer has been paused or previously stopped for a reason,
+            //                // so do not allow the retry to reactivate the consumer.
+            //                // Just want to ensure any changes get rolled back.
+            //                if(this.isRecovering())
+            //                {
+            //                    this.cancelRecovery();
+            //                }
+            //
+            //                this.previousComponentName = componentName;
+            //                this.previousExceptionAction = scheduledRetryAction;
+            //
+            //                throw new ForceTransactionRollbackException(action.toString() + " ignoring retry on a paused/stopped consumer.", throwable);
+            //            }
 
             this.consumer.stop();
             stopManagedResources();
@@ -405,18 +438,19 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     /**
      * Is the situation unrecoverable.
      */
+    @Override
     public boolean isUnrecoverable()
     {
         return this.isUnrecoverable;
     }
-    
+
     /**
      * Start a new scheduled recovery job.
      * @param retryAction
      * @throws SchedulerException
      */
     private void startRecovery(RetryAction retryAction)
-        throws SchedulerException
+            throws SchedulerException
     {
         JobDetail recoveryJobDetail = scheduledJobFactory.createJobDetail(this, ScheduledRecoveryManager.class, RECOVERY_JOB_NAME + this.flowName, this.moduleName);
         Trigger recoveryJobTrigger = newRecoveryTrigger(retryAction.getDelay());
@@ -424,9 +458,9 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
 
         recoveryAttempts = 1;
         logger.info("Recovery [" + recoveryAttempts + "/" 
-            + ((retryAction.getMaxRetries() < 0) ? "unlimited" : retryAction.getMaxRetries()) 
-            + "] flow [" + flowName + "] module [" + moduleName + "] started at ["
-            + scheduled + "]");
+                + ((retryAction.getMaxRetries() < 0) ? "unlimited" : retryAction.getMaxRetries()) 
+                + "] flow [" + flowName + "] module [" + moduleName + "] started at ["
+                + scheduled + "]");
     }
 
     /**
@@ -467,7 +501,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
 
         JobDetail recoveryJobDetail = scheduledJobFactory.createJobDetail(this, ScheduledRecoveryManager.class, RECOVERY_JOB_NAME + this.flowName, this.moduleName);
         Trigger recoveryJobTrigger = newRecoveryTrigger(retryAction.getDelay());
-        
+
         // Only schedule a new recovery if we don't have one in-progress.
         // This can be the case on very high volume feeds where 
         // multiple recoveries are created by in-flight messages 
@@ -475,16 +509,16 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         if(this.scheduler.checkExists(recoveryJobDetail.getKey()))
         {
             logger.info("Recovery in progress flow [" 
-                + flowName + "] module [" + moduleName 
-                + "]. No additional recoveries will be scheduled!");
+                    + flowName + "] module [" + moduleName 
+                    + "]. No additional recoveries will be scheduled!");
         }
         else
         {
             Date scheduled = this.scheduler.scheduleJob(recoveryJobDetail, recoveryJobTrigger);
             logger.info("Recovery [" + recoveryAttempts + "/" 
-                + ((retryAction.getMaxRetries() < 0) ? "unlimited" : retryAction.getMaxRetries()) 
-                + "] flow [" + flowName + "] module [" + moduleName + "] rescheduled at ["
-                + scheduled + "]");
+                    + ((retryAction.getMaxRetries() < 0) ? "unlimited" : retryAction.getMaxRetries()) 
+                    + "] flow [" + flowName + "] module [" + moduleName + "] rescheduled at ["
+                    + scheduled + "]");
         }
 
     }
@@ -534,11 +568,13 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     /**
      * Cancel an in progress recovery.
      */
+    @Override
     public void cancel()
     {
         this.cancelRecovery();
     }
-    
+
+    @Override
     public void initialise()
     {
         this.isUnrecoverable = false;
@@ -546,7 +582,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         this.previousComponentName = null;
         this.previousExceptionAction = null;
     }
-    
+
     /**
      * Resolve the incoming component name and exception to an associated action.
      * If the resolver has not been set then return the default stop action.
@@ -567,11 +603,11 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         }
 
         logger.info("RecoveryManager resolving to [" + action.toString()
-                + "] for componentName[" + componentName + "] exception [" + throwable.getMessage() + "]", throwable);
+            + "] for componentName[" + componentName + "] exception [" + throwable.getMessage() + "]", throwable);
 
         return action;
     }
-    
+
     /**
      * Factory method for creating a new recovery trigger.
      * @param delay
@@ -580,9 +616,9 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     protected Trigger newRecoveryTrigger(long delay)
     {
         return newTrigger()
-        .withIdentity(triggerKey(RECOVERY_JOB_TRIGGER_NAME + this.flowName, this.moduleName))
-        .startAt(new Date(System.currentTimeMillis() + delay))
-        .build();
+                .withIdentity(triggerKey(RECOVERY_JOB_TRIGGER_NAME + this.flowName, this.moduleName))
+                .startAt(new Date(System.currentTimeMillis() + delay))
+                .build();
     }
 
     /**
@@ -637,6 +673,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * Callback from the scheduler.
      * @param context
      */
+    @Override
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
         try
@@ -681,8 +718,8 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      */
     protected void startManagedResources()
     {
-    	if(this.managedResources != null)
-    	{
+        if(this.managedResources != null)
+        {
             List<FlowElement<ManagedResource>> flowElements = this.managedResources;
             for(int index=flowElements.size()-1; index >= 0; index--)
             {
@@ -691,7 +728,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
                 {
                     flowElement.getFlowComponent().startManagedResource();
                     logger.info("Started managed component [" 
-                        + flowElement.getComponentName() + "]");
+                            + flowElement.getComponentName() + "]");
                 }
                 catch(RuntimeException e)
                 {
@@ -710,14 +747,16 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
                     }
                 }
             }
-    	}
+        }
     }
 
     /* (non-Javadoc)
      * @see org.ikasan.spec.recovery.RecoveryManager#setManagedResources(java.lang.Object)
      */
+    @Override
     public <List> void setManagedResources(List managedResources)
     {
         this.managedResources = (java.util.List) managedResources;
     }
+
 }

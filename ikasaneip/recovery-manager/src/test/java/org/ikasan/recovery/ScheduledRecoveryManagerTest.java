@@ -40,25 +40,38 @@
  */
 package org.ikasan.recovery;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.Assert;
+
 import org.ikasan.exceptionResolver.ExceptionResolver;
-import org.ikasan.exceptionResolver.action.*;
+import org.ikasan.exceptionResolver.action.ExceptionAction;
+import org.ikasan.exceptionResolver.action.ExcludeEventAction;
+import org.ikasan.exceptionResolver.action.IgnoreAction;
+import org.ikasan.exceptionResolver.action.PauseAction;
+import org.ikasan.exceptionResolver.action.RetryAction;
+import org.ikasan.exceptionResolver.action.StopAction;
 import org.ikasan.scheduler.ScheduledJobFactory;
 import org.ikasan.spec.component.endpoint.Consumer;
 import org.ikasan.spec.error.reporting.ErrorReportingService;
+import org.ikasan.spec.event.ForceTransactionRollbackException;
 import org.ikasan.spec.exclusion.ExclusionService;
 import org.ikasan.spec.flow.FlowElement;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.management.ManagedResource;
 import org.ikasan.spec.recovery.RecoveryManager;
+import org.ikasan.spec.recovery.RecoveryManagerFlowController;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
-import org.quartz.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 
 /**
  * This test class supports the <code>ScheduledRecoveryManager</code> class.
@@ -76,7 +89,7 @@ public class ScheduledRecoveryManagerTest
             setImposteriser(ClassImposteriser.INSTANCE);
         }
     };
-    
+
     /** Mock consumer flowElement */
     final Consumer consumer = mockery.mock(Consumer.class, "mockConsumer");
 
@@ -100,19 +113,22 @@ public class ScheduledRecoveryManagerTest
 
     /** Mock stopAction */
     final StopAction stopAction = mockery.mock(StopAction.class, "Stop");
-    
+
+    /** Mock pauseAction */
+    final PauseAction pauseAction = mockery.mock(PauseAction.class, "Pause");
+
     /** Mock retryAction */
     final RetryAction retryAction = mockery.mock(RetryAction.class, "Retry");
-    
+
     /** Mock excludeEventAction */
     final ExcludeEventAction excludeEventAction = mockery.mock(ExcludeEventAction.class, "ExcludeEvent");
-    
+
     /** Mock ignoreAction */
     final IgnoreAction ignoreAction = mockery.mock(IgnoreAction.class, "Ignore");
-    
+
     /** Mock flowElement */
     final FlowElement flowElement = mockery.mock(FlowElement.class, "FlowElement");
-    
+
     /** Mock managedResource */
     final ManagedResource managedResource = mockery.mock(ManagedResource.class, "ManagedResource");
 
@@ -124,6 +140,8 @@ public class ScheduledRecoveryManagerTest
 
     /** Mock flowEvent */
     final FlowEvent flowEvent = mockery.mock(FlowEvent.class, "mockFlowEvent");
+
+    private RecoveryManagerFlowController flowController = mockery.mock(RecoveryManagerFlowController.class);
 
     /**
      * Test failed constructor due to null scheduler.
@@ -205,7 +223,7 @@ public class ScheduledRecoveryManagerTest
     public void test_successful_recover_to_stopAction_with_no_previousAction_noManagedResources() throws SchedulerException
     {
         final Exception exception = new Exception();
-        
+
         // expectations
         mockery.checking(new Expectations()
         {
@@ -226,7 +244,7 @@ public class ScheduledRecoveryManagerTest
 
         RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
         recoveryManager.setResolver(exceptionResolver);
-        
+
         try
         {
             recoveryManager.recover("componentName", exception);
@@ -242,7 +260,50 @@ public class ScheduledRecoveryManagerTest
     }
 
     /**
+     * Test successful pause action on recovery.
+     * 
+     * @throws SchedulerException
+     */
+    @Test
+    public void test_successful_recover_to_pauseAction() throws SchedulerException
+    {
+        StubbedScheduledRecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName",
+            "moduleName",
+            consumer);
+        final Exception exception = new Exception();
+        // expectations
+        mockery.checking(new Expectations()
+        {
+            {
+                // resolve the component name and exception to an action
+                exactly(1).of(exceptionResolver).resolve("componentName", exception);
+                will(returnValue(pauseAction));
+                // report error
+                exactly(1).of(errorReportingService).notify("componentName", exception, pauseAction.toString());
+                will(returnValue("errorUri"));
+                exactly(1).of(flowController).pauseFlowWhileInRecovery();
+            }
+        });
+        recoveryManager.setResolver(exceptionResolver);
+        recoveryManager.setRecoveryManagerFlowController(flowController);
+        try
+        {
+            recoveryManager.recover("componentName", exception);
+        }
+        catch (ForceTransactionRollbackException e)
+        {
+            Assert.assertEquals("Pause", e.getMessage());
+        }
+        // test aspects we cannot access through the interface
+        Assert.assertTrue(recoveryManager.getRetryAttempts() == 0);
+        mockery.assertIsSatisfied();
+    }
+
+
+
+    /**
      * Test successful exclude action on recovery.
+     * 
      * @throws SchedulerException
      */
     @Test
@@ -294,7 +355,7 @@ public class ScheduledRecoveryManagerTest
         final Exception exception = new Exception();
         final List managedResources = new ArrayList();
         managedResources.add(flowElement);
-        
+
         // expectations
         mockery.checking(new Expectations()
         {
@@ -310,7 +371,7 @@ public class ScheduledRecoveryManagerTest
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(false));
                 exactly(1).of(consumer).stop();
-                
+
                 // stop managed resources
                 exactly(1).of(flowElement).getFlowComponent();
                 will(returnValue(managedResource));
@@ -321,7 +382,7 @@ public class ScheduledRecoveryManagerTest
         RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
         recoveryManager.setResolver(exceptionResolver);
         recoveryManager.setManagedResources(managedResources);
-        
+
         try
         {
             recoveryManager.recover("componentName", exception);
@@ -344,7 +405,7 @@ public class ScheduledRecoveryManagerTest
     public void test_successful_recover_to_ignoreAction_with_no_previousAction_noManagedResources() throws SchedulerException
     {
         final Exception exception = new Exception();
-        
+
         // expectations
         mockery.checking(new Expectations() {
             {
@@ -352,14 +413,14 @@ public class ScheduledRecoveryManagerTest
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(ignoreAction));
 
-//                exactly(1).of(errorReportingService).notify("componentName", exception, ignoreAction.toString());
-//                will(returnValue("errorUri"));
+                //                exactly(1).of(errorReportingService).notify("componentName", exception, ignoreAction.toString());
+                //                will(returnValue("errorUri"));
             }
         });
 
         RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
         recoveryManager.setResolver(exceptionResolver);
-        
+
         recoveryManager.recover("componentName", exception);
 
         mockery.assertIsSatisfied();
@@ -375,7 +436,7 @@ public class ScheduledRecoveryManagerTest
         final Exception exception = new Exception();
         final List managedResources = new ArrayList();
         managedResources.add(flowElement);
-        
+
         // expectations
         mockery.checking(new Expectations()
         {
@@ -385,8 +446,8 @@ public class ScheduledRecoveryManagerTest
                 will(returnValue(ignoreAction));
 
                 // report error
-//                exactly(1).of(errorReportingService).notify("componentName", exception, ignoreAction.toString());
-//                will(returnValue("errorUri"));
+                //                exactly(1).of(errorReportingService).notify("componentName", exception, ignoreAction.toString());
+                //                will(returnValue("errorUri"));
             }
         });
 
@@ -407,7 +468,7 @@ public class ScheduledRecoveryManagerTest
     public void test_successful_recover_to_retryAction_with_no_previousAction_noManagedResources() throws SchedulerException
     {
         final Exception exception = new Exception();
-        
+
         final RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
 
         // expectations
@@ -428,21 +489,21 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are not already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(false));
-                
-//                // so start the scheduler
-//                exactly(1).of(scheduler).start();
+
+                //                // so start the scheduler
+                //                exactly(1).of(scheduler).start();
 
                 // create the recovery job and associated trigger
-//                exactly(1).of(scheduledJobFactory).createJobDetail((Job)recoveryManager, "recoveryJob_flowName", "moduleName");
+                //                exactly(1).of(scheduledJobFactory).createJobDetail((Job)recoveryManager, "recoveryJob_flowName", "moduleName");
                 exactly(1).of(scheduledJobFactory).createJobDetail(with(any(Job.class)), with(any(Class.class)), with(any(String.class)), with(any(String.class)));
                 will(returnValue(jobDetail));
-                
+
                 exactly(2).of(retryAction).getMaxRetries();
                 will(returnValue(2));
                 exactly(1).of(retryAction).getDelay();
                 will(returnValue(2000L));
-//                exactly(1).of(trigger).setStartTime(with(any(Date.class)));
-                
+                //                exactly(1).of(trigger).setStartTime(with(any(Date.class)));
+
                 // schedule the recovery job with its trigger
                 exactly(1).of(scheduler).scheduleJob(jobDetail, trigger);
 
@@ -464,7 +525,7 @@ public class ScheduledRecoveryManagerTest
         }
 
         Assert.assertTrue(recoveryManager.isRecovering());
-        
+
         // test aspects we cannot access through the interface
         Assert.assertTrue(((StubbedScheduledRecoveryManager) recoveryManager).getRetryAttempts() == 1);
 
@@ -479,7 +540,7 @@ public class ScheduledRecoveryManagerTest
     public void test_successful_recover_to_retryAction_with_no_previousAction_withManagedResources() throws SchedulerException
     {
         final Exception exception = new Exception();
-        
+
         final RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
         final List managedResources = new ArrayList();
         managedResources.add(flowElement);
@@ -507,21 +568,21 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are not already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(false));
-                
-//                // so start the scheduler
-//                exactly(1).of(scheduler).start();
+
+                //                // so start the scheduler
+                //                exactly(1).of(scheduler).start();
 
                 // create the recovery job and associated trigger
-//                exactly(1).of(scheduledJobFactory).createJobDetail((Job)recoveryManager, "recoveryJob_flowName", "moduleName");
+                //                exactly(1).of(scheduledJobFactory).createJobDetail((Job)recoveryManager, "recoveryJob_flowName", "moduleName");
                 exactly(1).of(scheduledJobFactory).createJobDetail(with(any(Job.class)), with(any(Class.class)), with(any(String.class)), with(any(String.class)));
                 will(returnValue(jobDetail));
-                
+
                 exactly(2).of(retryAction).getMaxRetries();
                 will(returnValue(2));
                 exactly(1).of(retryAction).getDelay();
                 will(returnValue(2000L));
-//                exactly(1).of(trigger).setStartTime(with(any(Date.class)));
-                
+                //                exactly(1).of(trigger).setStartTime(with(any(Date.class)));
+
                 // schedule the recovery job with its trigger
                 exactly(1).of(scheduler).scheduleJob(jobDetail, trigger);
 
@@ -544,7 +605,7 @@ public class ScheduledRecoveryManagerTest
         }
 
         Assert.assertTrue(recoveryManager.isRecovering());
-        
+
         // test aspects we cannot access through the interface
         Assert.assertTrue(((StubbedScheduledRecoveryManager)recoveryManager).getRetryAttempts() == 1);
 
@@ -572,7 +633,7 @@ public class ScheduledRecoveryManagerTest
                 //
                 // first time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -587,23 +648,23 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 exactly(2).of(scheduledJobFactory).createJobDetail(with(any(Job.class)), with(any(Class.class)), with(any(String.class)), with(any(String.class)));
                 will(returnValue(jobDetail));
-                
+
                 // create the recovery job and associated trigger
                 exactly(3).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
                 exactly(2).of(retryAction).getDelay();
                 will(returnValue(delay));
-                
+
                 // schedule the recovery job with its trigger
                 exactly(2).of(scheduler).scheduleJob(jobDetail, trigger);
 
                 //
                 // second time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -618,7 +679,7 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 // check we have not exceeded retry limits
                 exactly(4).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
@@ -626,7 +687,7 @@ public class ScheduledRecoveryManagerTest
                 //
                 // third time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -641,7 +702,7 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 // is recovery job already scheduled
                 exactly(1).of(jobDetail).getKey();
                 will(returnValue(jobKey));
@@ -651,7 +712,7 @@ public class ScheduledRecoveryManagerTest
                 // check we have not exceeded retry limits
                 exactly(1).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
-                
+
                 // cancel the recovery
                 exactly(1).of(scheduler).deleteJob(jobKey);
                 exactly(1).of(scheduler).checkExists(consumerJobKey);
@@ -695,7 +756,7 @@ public class ScheduledRecoveryManagerTest
         {
             Assert.assertEquals("Exhausted maximum retries.", e.getMessage());
         }
-        
+
         Assert.assertTrue(recoveryManager.isUnrecoverable());
 
         // test aspects we cannot access through the interface
@@ -727,7 +788,7 @@ public class ScheduledRecoveryManagerTest
                 //
                 // first time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -747,23 +808,23 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 exactly(2).of(scheduledJobFactory).createJobDetail(with(any(Job.class)), with(any(Class.class)), with(any(String.class)), with(any(String.class)));
                 will(returnValue(jobDetail));
-                
+
                 // create the recovery job and associated trigger
                 exactly(3).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
                 exactly(2).of(retryAction).getDelay();
                 will(returnValue(delay));
-                
+
                 // schedule the recovery job with its trigger
                 exactly(2).of(scheduler).scheduleJob(jobDetail, trigger);
 
                 //
                 // second time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -783,7 +844,7 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 // check we have not exceeded retry limits
                 exactly(4).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
@@ -791,7 +852,7 @@ public class ScheduledRecoveryManagerTest
                 //
                 // third time retry action is invoked
                 // 
-                
+
                 // resolve the component name and exception to an action
                 exactly(1).of(exceptionResolver).resolve("componentName", exception);
                 will(returnValue(retryAction));
@@ -811,7 +872,7 @@ public class ScheduledRecoveryManagerTest
                 // for this test we are already in a recovery
                 exactly(1).of(scheduler).isStarted();
                 will(returnValue(true));
-                
+
                 // is recovery job already scheduled
                 exactly(1).of(jobDetail).getKey();
                 will(returnValue(jobKey));
@@ -821,7 +882,7 @@ public class ScheduledRecoveryManagerTest
                 // check we have not exceeded retry limits
                 exactly(1).of(retryAction).getMaxRetries();
                 will(returnValue(maxRetries));
-                
+
                 // cancel the recovery
                 exactly(1).of(scheduler).deleteJob(jobKey);
                 exactly(1).of(scheduler).checkExists(consumerJobKey);
@@ -833,7 +894,7 @@ public class ScheduledRecoveryManagerTest
         RecoveryManager recoveryManager = new StubbedScheduledRecoveryManager(scheduler, "flowName", "moduleName", consumer);
         recoveryManager.setResolver(exceptionResolver);
         recoveryManager.setManagedResources(managedResources);
-        
+
         try
         {
             recoveryManager.recover("componentName", exception);
@@ -866,7 +927,7 @@ public class ScheduledRecoveryManagerTest
         {
             Assert.assertEquals("Exhausted maximum retries.", e.getMessage());
         }
-        
+
         Assert.assertTrue(recoveryManager.isUnrecoverable());
 
         // test aspects we cannot access through the interface
@@ -882,9 +943,9 @@ public class ScheduledRecoveryManagerTest
     public void test_failed_recover_due_to_unsupported_recovery_action()
     {
         final Exception exception = new Exception();
-        
+
         final ExceptionAction unsupportedExceptionAction = new UnsupportedExceptionAction();
-        
+
         // expectations
         mockery.checking(new Expectations()
         {
@@ -918,13 +979,13 @@ public class ScheduledRecoveryManagerTest
         {
             super(scheduler, scheduledJobFactory, flowName, moduleName, consumer, exclusionService, errorReportingService);
         }
-        
+
         @Override
         protected Trigger newRecoveryTrigger(long delay)
         {
             return trigger;
         }
-        
+
         /**
          * Added to allow testing on retry attempts counter
          */
