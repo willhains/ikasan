@@ -44,8 +44,6 @@ import java.util.Date;
 import java.util.Set;
 
 /**
- * Implementation of <code>GrantedAuthority</code> adding a description field
- * and identity field suitable for ORM 
  * 
  * @author Ikasan Development Team
  *
@@ -59,7 +57,7 @@ public class Module implements Comparable<Module>
     private String contextRoot;
     private String diagramUrl;
     private String version;
-    private Server server;
+    private Set<ServerModule> serverModules;
     private Set<Flow> flows;
 
     /** The data time stamp when an instance was first created */
@@ -80,22 +78,19 @@ public class Module implements Comparable<Module>
 	 * @param description
 	 * @param server
 	 */
-	public Module(String name, String contextRoot, String description, String version, Server server, String diagramUrl)
+	public Module(String name, String contextRoot, String description, String version, String diagramUrl)
 	{
 		super();
 		this.name = name;
 		this.contextRoot = contextRoot;
 		this.description = description;
 		this.version = version;
-		this.server = server;
 		this.diagramUrl = diagramUrl;
 		
 		long now = System.currentTimeMillis();
         this.createdDateTime = new Date(now);
         this.updatedDateTime = new Date(now);
 	}
-
-
 
 	/**
 	 * @return the id
@@ -189,27 +184,48 @@ public class Module implements Comparable<Module>
 		this.flows = flows;
 	}
 
-
-
+	
 	/**
-	 * @return the server
+	 * @return the serverModules
 	 */
-	public Server getServer()
+	public Set<ServerModule> getServerModules() 
 	{
-		return server;
+		return serverModules;
 	}
 
-
-
 	/**
-	 * @param server the server to set
+	 * @param serverModules the serverModules to set
 	 */
-	public void setServer(Server server)
+	public void setServerModules(Set<ServerModule> serverModules) 
 	{
-		this.server = server;
+		this.serverModules = serverModules;
 	}
 
+	/**
+	 * 
+	 * @param servers
+	 */
+	public void addServerModule(ServerModule server) 
+	{
+		this.serverModules.add(server);
+	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public Server getServerOnWhichActive()
+	{
+		for(ServerModule serverModule: this.serverModules)
+		{
+			if(serverModule.getStatus().equals("ACTIVE"))
+			{
+				return serverModule.getServer();
+			}
+		}
+		
+		return null;
+	}
 
 	/**
 	 * @return the createdDateTime
@@ -218,8 +234,6 @@ public class Module implements Comparable<Module>
 	{
 		return createdDateTime;
 	}
-
-
 
 	/**
 	 * @param createdDateTime the createdDateTime to set
@@ -281,21 +295,111 @@ public class Module implements Comparable<Module>
 		this.contextRoot = contextRoot;
 	}
 
+    /* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((contextRoot == null) ? 0 : contextRoot.hashCode());
+		result = prime * result
+				+ ((createdDateTime == null) ? 0 : createdDateTime.hashCode());
+		result = prime * result
+				+ ((description == null) ? 0 : description.hashCode());
+		result = prime * result
+				+ ((diagramUrl == null) ? 0 : diagramUrl.hashCode());
+		result = prime * result + ((flows == null) ? 0 : flows.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result
+				+ ((serverModules == null) ? 0 : serverModules.hashCode());
+		result = prime * result
+				+ ((updatedDateTime == null) ? 0 : updatedDateTime.hashCode());
+		result = prime * result + ((version == null) ? 0 : version.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Module other = (Module) obj;
+		if (contextRoot == null) {
+			if (other.contextRoot != null)
+				return false;
+		} else if (!contextRoot.equals(other.contextRoot))
+			return false;
+		if (createdDateTime == null) {
+			if (other.createdDateTime != null)
+				return false;
+		} else if (!createdDateTime.equals(other.createdDateTime))
+			return false;
+		if (description == null) {
+			if (other.description != null)
+				return false;
+		} else if (!description.equals(other.description))
+			return false;
+		if (diagramUrl == null) {
+			if (other.diagramUrl != null)
+				return false;
+		} else if (!diagramUrl.equals(other.diagramUrl))
+			return false;
+		if (flows == null) {
+			if (other.flows != null)
+				return false;
+		} else if (!flows.equals(other.flows))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (serverModules == null) {
+			if (other.serverModules != null)
+				return false;
+		} else if (!serverModules.equals(other.serverModules))
+			return false;
+		if (updatedDateTime == null) {
+			if (other.updatedDateTime != null)
+				return false;
+		} else if (!updatedDateTime.equals(other.updatedDateTime))
+			return false;
+		if (version == null) {
+			if (other.version != null)
+				return false;
+		} else if (!version.equals(other.version))
+			return false;
+		return true;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return "Module [id=" + id + ", name=" + name + ", description="
 				+ description + ", contextRoot=" + contextRoot
 				+ ", diagramUrl=" + diagramUrl + ", version=" + version
-				+ ", server=" + server.getId() + " " +  server.getName() + ", flows=" + flows
+				+ ", serverModules=" + serverModules + ", flows=" + flows
 				+ ", createdDateTime=" + createdDateTime + ", updatedDateTime="
 				+ updatedDateTime + "]";
 	}
 
-    /**
+	/**
      * Natural ordering on the name of the module
      * @param that the other Module to compare against
      * @return a negative integer, zero, or a positive integer as this object

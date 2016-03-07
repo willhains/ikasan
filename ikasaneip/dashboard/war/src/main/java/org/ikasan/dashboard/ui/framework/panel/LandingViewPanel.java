@@ -360,7 +360,17 @@ public class LandingViewPanel extends Panel implements View
     	}
     	else
     	{
-    		List<Module> modules = this.topologyService.getAllModules();
+    		List<Module> modules = null;
+    		try
+    		{
+    			modules = this.topologyService.getAllModules();
+    		}
+    		catch(Exception e)
+    		{
+    			modules = new ArrayList<Module>();
+    			// Ignoring this as DB may not have been set up yet.
+    			logger.error("Error trying to get all modules from database: " + e);
+    		}
     		
     		for(Module module: modules)
     		{

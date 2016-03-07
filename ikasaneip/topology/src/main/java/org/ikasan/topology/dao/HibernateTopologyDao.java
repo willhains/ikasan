@@ -58,6 +58,7 @@ import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Notification;
 import org.ikasan.topology.model.RoleFilter;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.orm.hibernate4.HibernateCallback;
 import org.springframework.orm.hibernate4.support.HibernateDaoSupport;
@@ -75,6 +76,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 	private static final String DELETE_FILTER_COMPONENT_BY_FILTER_ID = "delete from FilterComponent where id.filterId = :filterId"; 
 	private static final String DELETE_FILTER_COMPONENT_BY_COMPONENT_ID = "delete from FilterComponent where id.componentId = :componentId";
 	private static final String DELETE_BUSINESS_STREAM_FLOW_BY_FLOW_ID = "delete from BusinessStreamFlow where id.flowId = :flowId";
+	private static final String DELETE_ALL_SERVERMODULES = "delete from ServerModule";
 	
 	/* (non-Javadoc)
 	 * @see org.ikasan.topology.dao.TopologyDao#getAllServers()
@@ -108,6 +110,30 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		DetachedCriteria criteria = DetachedCriteria.forClass(Module.class);
 
         return (List<Module>)this.getHibernateTemplate().findByCriteria(criteria);
+	}
+	
+	
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.topology.dao.TopologyDao#getAllServerModules()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<ServerModule> getAllServerModules() 
+	{
+		DetachedCriteria criteria = DetachedCriteria.forClass(ServerModule.class);
+
+        return (List<ServerModule>)this.getHibernateTemplate().findByCriteria(criteria);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.topology.dao.TopologyDao#save(org.ikasan.topology.model.ServerModule)
+	 */
+	@Override
+	public void save(ServerModule module) 
+	{
+		module.setUpdatedDateTime(new Date());
+		this.getHibernateTemplate().saveOrUpdate(module);		
 	}
 
 	/* (non-Javadoc)
@@ -187,7 +213,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		if(serverId != null && moduleId != null)
 		{
 			criteria.createCriteria("module").add(Restrictions.eq("id", moduleId))
-				.createCriteria("server").add(Restrictions.eq("id", serverId));
+				.createCriteria("serverModules").add(Restrictions.eq("id.serverId", serverId));
 		}
 		else if(moduleId != null)
 		{
@@ -195,8 +221,8 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		}
 		else if(serverId != null)
 		{
-			criteria.createCriteria("module").createCriteria("server"
-					).add(Restrictions.eq("id", serverId));
+			criteria.createCriteria("module").createCriteria("serverModules"
+					).add(Restrictions.eq("id.serverId", serverId));
 		}
 			
 
@@ -249,7 +275,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		if(serverId != null && moduleId != null)
 		{
 			criteria.createCriteria("module").add(Restrictions.eq("id", moduleId))
-				.createCriteria("server").add(Restrictions.eq("id", serverId));
+				.createCriteria("serverModules").add(Restrictions.eq("id.serverId", serverId));
 		}
 		else if(moduleId != null)
 		{
@@ -257,8 +283,8 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		}
 		else if(serverId != null)
 		{
-			criteria.createCriteria("module").createCriteria("server"
-					).add(Restrictions.eq("id", serverId));
+			criteria.createCriteria("module").createCriteria("serverModules"
+					).add(Restrictions.eq("id.serverId", serverId));
 		}
 			
 		if(flowName != null)
@@ -351,7 +377,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		
 		criteria.createCriteria("flow").add(Restrictions.eq("name", flowName))
 			.createCriteria("module").add(Restrictions.eq("id", moduleId))
-				.createCriteria("server").add(Restrictions.eq("id", serverId));
+				.createCriteria("servers").add(Restrictions.eq("id", serverId));
 
 		criteria.add(Restrictions.not(Restrictions.in("name", componentNames)));
 
@@ -502,6 +528,26 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
                 
                 query.setParameter("flowId", flowId);
 
+                query.executeUpdate();
+                
+                return null;
+            }
+        });
+	}
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.topology.dao.TopologyDao#deleteAllServerModules()
+	 */
+	@Override
+	public void deleteAllServerModules() 
+	{
+		this.getHibernateTemplate().execute(new HibernateCallback()
+        {
+            @SuppressWarnings("unchecked")
+            public Object doInHibernate(Session session) throws HibernateException
+            {
+                Query query = session.createQuery(DELETE_ALL_SERVERMODULES);
+       
                 query.executeUpdate();
                 
                 return null;

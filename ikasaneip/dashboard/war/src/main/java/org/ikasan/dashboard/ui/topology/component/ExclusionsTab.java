@@ -488,7 +488,7 @@ public class ExclusionsTab extends TopologyTab
 	                		return;
 	                	}
 	                	
-	                	Server server = module.getServer();
+	                	Server server = module.getServerOnWhichActive();
 	            		
 	            		String url = server.getUrl() + ":" + server.getPort()
 	            				+ module.getContextRoot() 
@@ -585,7 +585,7 @@ public class ExclusionsTab extends TopologyTab
 	                		return;
 	                	}
 	                	
-	                	Server server = module.getServer();
+	                	Server server = module.getServerOnWhichActive();
 	            		
 	                	String url = server.getUrl() + ":" + server.getPort()
 	            				+ module.getContextRoot() 

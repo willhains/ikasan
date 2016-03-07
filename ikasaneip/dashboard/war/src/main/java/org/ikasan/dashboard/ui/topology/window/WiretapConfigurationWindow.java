@@ -407,7 +407,7 @@ public class WiretapConfigurationWindow extends Window
     	
     	Client client = ClientBuilder.newClient(clientConfig);
     	
-    	Server server = this.component.getFlow().getModule().getServer();
+    	Server server = this.component.getFlow().getModule().getServerOnWhichActive();
 		
 		String url = server.getUrl() + ":" + server.getPort()
 				+ this.component.getFlow().getModule().getContextRoot() 
@@ -460,7 +460,7 @@ public class WiretapConfigurationWindow extends Window
     	
     	Client client = ClientBuilder.newClient(clientConfig);
     	
-    	Server server = this.component.getFlow().getModule().getServer();
+    	Server server = this.component.getFlow().getModule().getServerOnWhichActive();
 		
 		String url = server.getUrl() + ":" + server.getPort()
 				+ this.component.getFlow().getModule().getContextRoot() 

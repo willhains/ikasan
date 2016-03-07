@@ -69,7 +69,9 @@ import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Notification;
 import org.ikasan.topology.model.RoleFilter;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ikasan.topology.exception.DiscoveryException;
 
@@ -231,16 +233,18 @@ public class TopologyServiceImpl implements TopologyService
     	Client client = ClientBuilder.newClient(clientConfig);
     	
     	ObjectMapper mapper = new ObjectMapper();
+    	mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     	
     	// Firstly sort out the server module relationships
 		for(Server server: servers)
-		{
-			List<Module> modules = this.topologyDao.getAllModules();	
+		{			
+			List<Module> modules = this.topologyDao.getAllModules();
 			
-			Set<Module> moduleSet = new HashSet<Module>();
+			Set<ServerModule> serverModules = new HashSet<ServerModule>();
 			
 			for(Module module: modules)
-			{	
+			{					
+				
 				List<String> discoveredFlowNames = new ArrayList<String>();
 				
 				String url = server.getUrl() + ":" + server.getPort() 
@@ -267,13 +271,14 @@ public class TopologyServiceImpl implements TopologyService
 			    logger.debug("Successfully discovered module using URL: " + url 
 		    			+ ". Server =  " + server);
 			    
-			    module.setServer(server);
-
-			    moduleSet.add(module);
+			    ServerModule serverModule = new ServerModule(server, module);	
 			    
-			    server.setModules(moduleSet);
+			    serverModules.add(serverModule);
 			    
-			    this.topologyDao.save(server);
+			    if(module.getServerModules() != null && !module.getServerModules().contains(serverModule))
+			    {
+			    	this.topologyDao.save(serverModule);
+			    }
 			}
 		}
 		

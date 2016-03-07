@@ -43,52 +43,32 @@
 
  Author:  Ikasan Development Team
  
+ Purpose: BusinessStreamFlow table hibernate mapping file. * * *
 -->
 <!DOCTYPE hibernate-mapping PUBLIC
     "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
     "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
-    <class
-        name="org.ikasan.topology.model.Server"
-        table="Server">
+	<class name="org.ikasan.topology.model.ServerModule"
+		table="ServerModule">
+		
+		<composite-id name="id" class="org.ikasan.topology.model.ServerModuleKey">
+	        <key-property name="serverId" column="ServerId"/>
+	        <key-property name="moduleId" column="ModuleId"/>
+    	</composite-id>
+    	
+    	<many-to-one name="module" class="org.ikasan.topology.model.Module" 
+    		column="ModuleId" not-null="true" insert="false" update="false" lazy="false"/>
+    	
+    	<many-to-one name="server" class="org.ikasan.topology.model.Server" 
+    		column="ServerId" not-null="true" insert="false" update="false" lazy="false"/>
 
-        <id name="id"
-          type="java.lang.Long"
-          column="Id"
-          unsaved-value="null">
-          <generator class="identity" />
-        </id>
-
-        <property name="name"
+		<property name="status"
                   type="java.lang.String"
-                  column="Name"
-                  not-null="true"
-                  unique="true"/>
-
-        <property name="description"
-                  type="java.lang.String"
-                  column="Description"
-                  not-null="true" 
-                  unique="false"/>
+                  column="Status"
+                  not-null="true" />
                   
-        <property name="url"
-                  type="java.lang.String"
-                  column="Url"
-                  not-null="true" 
-                  unique="false"/>
-        
-        <property name="port"
-                  type="java.lang.Integer"
-                  column="Port"
-                  not-null="true" 
-                  unique="false"/>
-         
-        <set name="serverModules" cascade="none" lazy="false" inverse="true" fetch="select">
-         	<key column="ServerId"/>
-         	<one-to-many class="org.ikasan.topology.model.ServerModule"/>
-      	</set>
-       	
-        <property name="createdDateTime"
+		<property name="createdDateTime"
                   type="java.util.Date"
                   column="CreatedDateTime"
                   not-null="true" />
@@ -97,5 +77,5 @@
                   type="java.util.Date"
                   column="UpdatedDateTime"
                   not-null="true" />
-    </class>
+	</class>
 </hibernate-mapping>

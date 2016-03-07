@@ -1,7 +1,5 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-
-
  $Id$
  $URL$
  
@@ -44,58 +42,40 @@
  Author:  Ikasan Development Team
  
 -->
-<!DOCTYPE hibernate-mapping PUBLIC
-    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
-    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
-<hibernate-mapping>
-    <class
-        name="org.ikasan.topology.model.Server"
-        table="Server">
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+    
+    <changeSet author="ikasan dev" id="createServerModule" context="baseline">
+    
+    	<preConditions onFail="MARK_RAN">
+			<not><tableExists tableName="ServerModule" /></not>
+		</preConditions>
 
-        <id name="id"
-          type="java.lang.Long"
-          column="Id"
-          unsaved-value="null">
-          <generator class="identity" />
-        </id>
-
-        <property name="name"
-                  type="java.lang.String"
-                  column="Name"
-                  not-null="true"
-                  unique="true"/>
-
-        <property name="description"
-                  type="java.lang.String"
-                  column="Description"
-                  not-null="true" 
-                  unique="false"/>
-                  
-        <property name="url"
-                  type="java.lang.String"
-                  column="Url"
-                  not-null="true" 
-                  unique="false"/>
+        <createTable tableName="ServerModule">
+            <column name="ServerId" type="numeric(18)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ModuleId" type="numeric(18)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="Status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="${getDate}" name="CreatedDateTime" type="${dateType}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UpdatedDateTime" type="${dateType}">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
         
-        <property name="port"
-                  type="java.lang.Integer"
-                  column="Port"
-                  not-null="true" 
-                  unique="false"/>
-         
-        <set name="serverModules" cascade="none" lazy="false" inverse="true" fetch="select">
-         	<key column="ServerId"/>
-         	<one-to-many class="org.ikasan.topology.model.ServerModule"/>
-      	</set>
-       	
-        <property name="createdDateTime"
-                  type="java.util.Date"
-                  column="CreatedDateTime"
-                  not-null="true" />
+        <!-- The statement below is required by sybase to set the identity gap to 1. -->
+        <sql dbms="sybase">sp_chgattribute 'ServerModule', 'identity_gap', 1</sql>
+        
+        <addPrimaryKey columnNames="ServerId, ModuleId" constraintName="ServerModulePk" tableName="ServerModule"/>
 
-        <property name="updatedDateTime"
-                  type="java.util.Date"
-                  column="UpdatedDateTime"
-                  not-null="true" />
-    </class>
-</hibernate-mapping>
+    </changeSet>
+        
+</databaseChangeLog>

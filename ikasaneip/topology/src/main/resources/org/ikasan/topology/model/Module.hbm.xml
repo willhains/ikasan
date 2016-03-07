@@ -88,9 +88,11 @@
                   column="Version"
                   not-null="false"
                   unique="false"/>
-        
-        <many-to-one name="server" column="ServerId" 
-       		class="org.ikasan.topology.model.Server" not-null="false" lazy="false"/>
+      	
+      	<set name="serverModules" cascade="none" lazy="false">
+         	<key column="ModuleId"/>
+         	<one-to-many class="org.ikasan.topology.model.ServerModule"/>
+      	</set>
          
         <set name="flows" cascade="all" order-by="FlowOrder asc" lazy="false">
          	<key column="ModuleId"/>

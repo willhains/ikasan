@@ -41,123 +41,119 @@
 package org.ikasan.topology.model;
 
 import java.util.Date;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * 
  * @author Ikasan Development Team
  *
  */
-public class Server 
+public class ServerModule implements Comparable<ServerModule>
 {
-	private Long id;
-	private String name = "";
-	private String description = "";
-	private String url  = "";
-	private Integer port = 0;
-	private Set<ServerModule> serverModules;
-	
+	private ServerModuleKey id;
+	private Module module;
+	private Server server;
+	private String status = "STANDBY";
+
 	/** The data time stamp when an instance was first created */
     private Date createdDateTime;
 
     /** The data time stamp when an instance was last updated */
     private Date updatedDateTime;
-
-	/**
-	 * Default constructor for Hibernate
-	 */
-    public Server()
+   
+    
+    @SuppressWarnings("unused")
+	private ServerModule()
     {
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param id
+     */
+	public ServerModule(Server server, Module module)
+    {
+		this.server = server;
+		if(this.server == null)
+		{
+			throw new IllegalArgumentException("server cannot be NULL!");
+		}
+		
+		this.module = module;
+		if(this.module == null)
+		{
+			throw new IllegalArgumentException("module cannot be NULL!");
+		}
+		
+		this.id = new ServerModuleKey(server.getId(), module.getId());
+		
     	long now = System.currentTimeMillis();
-        this.createdDateTime = new Date(now);
+		this.createdDateTime = new Date(now);
         this.updatedDateTime = new Date(now);
     }
 
-
 	/**
-	 * Constructor 
 	 * 
-	 * @param name
-	 * @param description
-	 * @param url
-	 * @param port
+	 * @return
 	 */
-	public Server(String name, String description, String url, Integer port)
-	{
-		super();
-		this.name = name;
-		this.description = description;
-		this.url = url;
-		this.port = port;
-		
-		long now = System.currentTimeMillis();
-        this.createdDateTime = new Date(now);
-        this.updatedDateTime = new Date(now);
-	}
-
-	/**
-	 * @return the id
-	 */
-	public Long getId()
+	public ServerModuleKey getId() 
 	{
 		return id;
 	}
 
 	/**
-	 * @param id the id to set
+	 * 
+	 * @param id
 	 */
-	public void setId(Long id)
+	public void setId(ServerModuleKey id)
 	{
 		this.id = id;
 	}
 
 	/**
-	 * @return the name
+	 * 
+	 * @return
 	 */
-	public String getName()
+	public Module getModule() 
 	{
-		return name;
+		return module;
 	}
 
 	/**
-	 * @param name the name to set
+	 * 
+	 * @param module
 	 */
-	public void setName(String name)
+	public void setModule(Module module) 
 	{
-		this.name = name;
+		this.module = module;
 	}
 
 	/**
-	 * @return the description
+	 * @return the server
 	 */
-	public String getDescription()
-	{
-		return description;
+	public Server getServer() {
+		return server;
 	}
 
 	/**
-	 * @param description the description to set
+	 * @param server the server to set
 	 */
-	public void setDescription(String description)
-	{
-		this.description = description;
+	public void setServer(Server server) {
+		this.server = server;
 	}
 
 	/**
-	 * @return the modules
+	 * @return the status
 	 */
-	public Set<ServerModule> getServerModules()
-	{
-		return serverModules;
+	public String getStatus() {
+		return status;
 	}
 
 	/**
-	 * @param modules the modules to set
+	 * @param status the status to set
 	 */
-	public void setServerModules(Set<ServerModule> modules)
-	{
-		this.serverModules = modules;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 	/**
@@ -191,38 +187,16 @@ public class Server
 	{
 		this.updatedDateTime = updatedDateTime;
 	}
-
-	/**
-	 * @return the url
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
-	public String getUrl()
-	{
-		return url;
+	@Override
+	public int compareTo(ServerModule o) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
-	/**
-	 * @param url the url to set
-	 */
-	public void setUrl(String url)
-	{
-		this.url = url;
-	}
-
-	/**
-	 * @return the port
-	 */
-	public Integer getPort()
-	{
-		return port;
-	}
-
-	/**
-	 * @param port the port to set
-	 */
-	public void setPort(Integer port)
-	{
-		this.port = port;
-	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
@@ -231,20 +205,9 @@ public class Server
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result
-				+ ((createdDateTime == null) ? 0 : createdDateTime.hashCode());
-		result = prime * result
-				+ ((description == null) ? 0 : description.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((serverModules == null) ? 0 : serverModules.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((port == null) ? 0 : port.hashCode());
-		result = prime * result
-				+ ((updatedDateTime == null) ? 0 : updatedDateTime.hashCode());
-		result = prime * result + ((url == null) ? 0 : url.hashCode());
 		return result;
 	}
-
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
@@ -257,56 +220,24 @@ public class Server
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Server other = (Server) obj;
-		if (createdDateTime == null) {
-			if (other.createdDateTime != null)
-				return false;
-		} else if (!createdDateTime.equals(other.createdDateTime))
-			return false;
-		if (description == null) {
-			if (other.description != null)
-				return false;
-		} else if (!description.equals(other.description))
-			return false;
+		ServerModule other = (ServerModule) obj;
 		if (id == null) {
 			if (other.id != null)
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
-		if (serverModules == null) {
-			if (other.serverModules != null)
-				return false;
-		} else if (!serverModules.equals(other.serverModules))
-			return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (port == null) {
-			if (other.port != null)
-				return false;
-		} else if (!port.equals(other.port))
-			return false;
-		if (updatedDateTime == null) {
-			if (other.updatedDateTime != null)
-				return false;
-		} else if (!updatedDateTime.equals(other.updatedDateTime))
-			return false;
-		if (url == null) {
-			if (other.url != null)
-				return false;
-		} else if (!url.equals(other.url))
-			return false;
 		return true;
 	}
 
-
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
-		return "Server [id=" + id + ", name=" + name + ", description="
-				+ description + ", url=" + url + ", port=" + port
-				+ ", createdDateTime=" + createdDateTime + ", updatedDateTime="
-				+ updatedDateTime + "]";
+		return "ServerModule [id=" + id + ", module=" + module.getName() + ", server="
+				+ server.getName() + ", status=" + status + ", createdDateTime="
+				+ createdDateTime + ", updatedDateTime=" + updatedDateTime
+				+ "]";
 	}
+	
 }

@@ -63,7 +63,6 @@ import org.vaadin.teemu.VaadinIcons;
 import org.vaadin.visjs.networkDiagram.Color;
 import org.vaadin.visjs.networkDiagram.Edge;
 import org.vaadin.visjs.networkDiagram.Node;
-import org.vaadin.visjs.networkDiagram.Node.NodeClickListener;
 import org.vaadin.visjs.networkDiagram.options.HierarchicalLayout;
 import org.vaadin.visjs.networkDiagram.options.HierarchicalLayout.Direction;
 import org.vaadin.visjs.networkDiagram.options.Options;
@@ -190,7 +189,7 @@ public class BusinessStreamTab extends TopologyTab
     			            }
     			        });
 						
-						businessStreamTable.addItem(new Object[]{flow.getModule().getServer().getName()
+						businessStreamTable.addItem(new Object[]{flow.getModule().getServerOnWhichActive().getName()
 								, flow.getModule().getName(), flow.getName(), deleteButton}, businessStreamFlow);
 					}
 				}
@@ -239,7 +238,7 @@ public class BusinessStreamTab extends TopologyTab
 	    			            }
 	    			        });
 							
-	    					businessStreamTable.addItem(new Object[]{flow.getModule().getServer().getName()
+	    					businessStreamTable.addItem(new Object[]{flow.getModule().getServerOnWhichActive().getName()
 									, flow.getModule().getName(), flow.getName(), deleteButton}, businessStreamFlow);
 						}
 					}
@@ -377,7 +376,7 @@ public class BusinessStreamTab extends TopologyTab
     						deleteButton.setVisible(false);
     			    	}
     					
-    					businessStreamTable.addItem(new Object[]{businessStreamFlow.getFlow().getModule().getServer().getName()
+    					businessStreamTable.addItem(new Object[]{businessStreamFlow.getFlow().getModule().getServerOnWhichActive().getName()
 								, businessStreamFlow.getFlow().getName(), businessStreamFlow.getFlow().getName(), deleteButton}, businessStreamFlow);
                 	}
                 }
@@ -450,22 +449,22 @@ public class BusinessStreamTab extends TopologyTab
 	}
 	
 	public DragAndDropWrapper getNetwrokDiagram() 
-	{
-		Physics p = new Physics();
-		
+	{		
 		HierarchicalLayout l = new HierarchicalLayout();
 		l.setEnabled(true);
 		l.setDirection(Direction.LR);
 		
         Options options = new Options();
         options.setZoomable(true);
-        options.setConfigurePhysics(false);
+//        options.setConfigurePhysics(false);
         options.setClickToUse(false);
         options.setStabilizationIterations(0);
         options.setStabilize(true);
         
+        MyPhysics p = new MyPhysics();
+        
 //        options.setStabilize(true);
-//        options.setPhysics(p);
+        options.setPhysics(p);
 //        options.setHierarchicalLayout(l);
         
         final IkasanNetworkDiagram networkDiagram = new IkasanNetworkDiagram(options);
@@ -633,6 +632,21 @@ public class BusinessStreamTab extends TopologyTab
 	public void search()
 	{
 		// TODO Auto-generated method stub
+		
+	}
+	
+	private class MyPhysics extends Physics
+	{
+		private boolean enabled = false;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+		
 		
 	}
 

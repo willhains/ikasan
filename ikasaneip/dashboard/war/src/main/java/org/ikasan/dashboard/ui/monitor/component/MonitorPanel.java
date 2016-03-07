@@ -99,6 +99,7 @@ import com.vaadin.ui.themes.ValoTheme;
  * @author Ikasan Development Team
  *
  */
+// TODO sort out server module stuff
 public class MonitorPanel extends Panel implements View, Action.Handler
 {
 	private static final long serialVersionUID = -3174124965136021440L;
@@ -204,72 +205,72 @@ public class MonitorPanel extends Panel implements View, Action.Handler
     	icon.setColor("green");
 
     	
-		for(String key: stateMap.keySet())
-		{
-			for(Module module: server.getModules())
-			{
-				if(key.startsWith(module.getName()))
-				{
-					String state = this.stateMap.get(key);
-					
-					if(state.equals(RECOVERING) || state.equals(STOPPED_IN_ERROR))
-					{
-						icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
-						icon.setSizePixels(64);
-				    	icon.setColor("red");
-				    	
-				    	statusLabel.setCaption(icon.getHtml());
-				    	
-				    	return;
-					}
-					
-					if(state.equals(STOPPED))
-					{
-						for(Flow flow: module.getFlows())
-						{
-							if(key.contains(flow.getName()))
-							{
-								StartupControl startupControl = this.startupControlService.getStartupControl(module.getName()
-									, flow.getName());
-								
-								if(!startupControl.isDisabled())
-								{
-									icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
-									icon.setSizePixels(64);
-							    	icon.setColor("red");
-							    	
-							    	statusLabel.setCaption(icon.getHtml());
-							    	
-							    	return;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		for(String key: stateMap.keySet())
-		{
-			for(Module module: server.getModules())
-			{
-				if(key.startsWith(module.getName()))
-				{
-					String state = this.stateMap.get(key);
-					
-					if(state.equals(PAUSED))
-					{
-						icon = MonitorIcons.PAUSE;
-						icon.setSizePixels(64);
-				    	icon.setColor("purple");
-				    	
-				    	statusLabel.setCaption(icon.getHtml());
-				    	
-				    	return;
-					}
-				}
-			}
-		}
+//		for(String key: stateMap.keySet())
+//		{
+//			for(Module module: server.getModules())
+//			{
+//				if(key.startsWith(module.getName()))
+//				{
+//					String state = this.stateMap.get(key);
+//					
+//					if(state.equals(RECOVERING) || state.equals(STOPPED_IN_ERROR))
+//					{
+//						icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
+//						icon.setSizePixels(64);
+//				    	icon.setColor("red");
+//				    	
+//				    	statusLabel.setCaption(icon.getHtml());
+//				    	
+//				    	return;
+//					}
+//					
+//					if(state.equals(STOPPED))
+//					{
+//						for(Flow flow: module.getFlows())
+//						{
+//							if(key.contains(flow.getName()))
+//							{
+//								StartupControl startupControl = this.startupControlService.getStartupControl(module.getName()
+//									, flow.getName());
+//								
+//								if(!startupControl.isDisabled())
+//								{
+//									icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
+//									icon.setSizePixels(64);
+//							    	icon.setColor("red");
+//							    	
+//							    	statusLabel.setCaption(icon.getHtml());
+//							    	
+//							    	return;
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		
+//		for(String key: stateMap.keySet())
+//		{
+//			for(Module module: server.getModules())
+//			{
+//				if(key.startsWith(module.getName()))
+//				{
+//					String state = this.stateMap.get(key);
+//					
+//					if(state.equals(PAUSED))
+//					{
+//						icon = MonitorIcons.PAUSE;
+//						icon.setSizePixels(64);
+//				    	icon.setColor("purple");
+//				    	
+//				    	statusLabel.setCaption(icon.getHtml());
+//				    	
+//				    	return;
+//					}
+//				}
+//			}
+//		}
 		
 		statusLabel.setCaption(icon.getHtml());
 	}
@@ -463,39 +464,39 @@ public class MonitorPanel extends Panel implements View, Action.Handler
 	
 	public void populate(ConcurrentHashMap<String, String> stateMap)
 	{		
-		for(Module module: server.getModules())
-		{
-			for(Flow flow: module.getFlows())
-			{
-				String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
-				
-				if(state == null)
-				{
-					state = "unknown";
-				}
-				
-				Item item = this.cont.getItem(flow);
-							
-				if(item != null && !item.getItemProperty("Flow State").getValue().equals(state))
-				{
-					item.getItemProperty("Flow State").setValue(state);
-				}
-				else
-				{
-					item = this.cont.addItem(flow);
-					
-					if(item != null && flow != null)
-					{
-						item.getItemProperty("Module Name").setValue(flow.getModule().getName());
-						item.getItemProperty("Flow Name").setValue(flow.getName());
-						item.getItemProperty("Flow State").setValue(state);
-//						StartupControl startupControl = this.startupControlService.getStartupControl(flow.getModule().getName()
-//								, flow.getName());
-//						item.getItemProperty("Startup Control").setValue(startupControl.getStartupType().name());
-					}
-				}
-			}
-		}
+//		for(Module module: server.getModules())
+//		{
+//			for(Flow flow: module.getFlows())
+//			{
+//				String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
+//				
+//				if(state == null)
+//				{
+//					state = "unknown";
+//				}
+//				
+//				Item item = this.cont.getItem(flow);
+//							
+//				if(item != null && !item.getItemProperty("Flow State").getValue().equals(state))
+//				{
+//					item.getItemProperty("Flow State").setValue(state);
+//				}
+//				else
+//				{
+//					item = this.cont.addItem(flow);
+//					
+//					if(item != null && flow != null)
+//					{
+//						item.getItemProperty("Module Name").setValue(flow.getModule().getName());
+//						item.getItemProperty("Flow Name").setValue(flow.getName());
+//						item.getItemProperty("Flow State").setValue(state);
+////						StartupControl startupControl = this.startupControlService.getStartupControl(flow.getModule().getName()
+////								, flow.getName());
+////						item.getItemProperty("Startup Control").setValue(startupControl.getStartupType().name());
+//					}
+//				}
+//			}
+//		}
 	}	
 	
 	@Subscribe
@@ -592,41 +593,42 @@ public class MonitorPanel extends Panel implements View, Action.Handler
 	
 	protected boolean actionFlow(Flow flow, String action)
 	{		
-		IkasanAuthentication authentication = (IkasanAuthentication)VaadinService.getCurrentRequest().getWrappedSession()
-	        	.getAttribute(DashboardSessionValueConstants.USER);
-    	
-    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(authentication.getName(), (String)authentication.getCredentials());
-    	
-    	ClientConfig clientConfig = new ClientConfig();
-    	clientConfig.register(feature) ;
-    	
-    	Client client = ClientBuilder.newClient(clientConfig);
-		
-    	String url = flow.getModule().getServer().getUrl() + ":" + flow.getModule().getServer().getPort()
-				+ flow.getModule().getContextRoot() 
-				+ "/rest/moduleControl/controlFlowState/"
-				+ flow.getModule().getName() 
-	    		+ "/"
-	    		+ flow.getName();
-    	
-	    WebTarget webTarget = client.target(url);
-	    Response response = webTarget.request().put(Entity.entity(action, MediaType.APPLICATION_OCTET_STREAM));
-	    
-	    if(response.getStatus()  == 200)
-	    {
-	    	Notification.show(flow.getName() + " flow " + action + "!");
-	    }  
-	    else
-	    {
-	    	response.bufferEntity();
-	        
-	        String responseMessage = response.readEntity(String.class);
-	        
-	    	Notification.show(responseMessage, Type.ERROR_MESSAGE);
-	    	return false;
-	    }
-	    
-	    return true;
+		return true;
+//		IkasanAuthentication authentication = (IkasanAuthentication)VaadinService.getCurrentRequest().getWrappedSession()
+//	        	.getAttribute(DashboardSessionValueConstants.USER);
+//    	
+//    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(authentication.getName(), (String)authentication.getCredentials());
+//    	
+//    	ClientConfig clientConfig = new ClientConfig();
+//    	clientConfig.register(feature) ;
+//    	
+//    	Client client = ClientBuilder.newClient(clientConfig);
+//		
+//    	String url = flow.getModule().getServer().getUrl() + ":" + flow.getModule().getServer().getPort()
+//				+ flow.getModule().getContextRoot() 
+//				+ "/rest/moduleControl/controlFlowState/"
+//				+ flow.getModule().getName() 
+//	    		+ "/"
+//	    		+ flow.getName();
+//    	
+//	    WebTarget webTarget = client.target(url);
+//	    Response response = webTarget.request().put(Entity.entity(action, MediaType.APPLICATION_OCTET_STREAM));
+//	    
+//	    if(response.getStatus()  == 200)
+//	    {
+//	    	Notification.show(flow.getName() + " flow " + action + "!");
+//	    }  
+//	    else
+//	    {
+//	    	response.bufferEntity();
+//	        
+//	        String responseMessage = response.readEntity(String.class);
+//	        
+//	    	Notification.show(responseMessage, Type.ERROR_MESSAGE);
+//	    	return false;
+//	    }
+//	    
+//	    return true;
 	}
 
 	/* (non-Javadoc)

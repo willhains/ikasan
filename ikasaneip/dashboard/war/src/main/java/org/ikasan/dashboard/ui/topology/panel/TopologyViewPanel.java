@@ -45,6 +45,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -106,6 +107,7 @@ import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
 import org.ikasan.wiretap.dao.WiretapDao;
 import org.ikasan.wiretap.service.TriggerManagementService;
@@ -637,7 +639,12 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
                 		
                 		for(Server server: servers)
                 		{
-                			Set<Module> modules = server.getModules();
+                			Set<Module> modules = new HashSet<Module>();
+                			
+                			for(ServerModule serverModule: server.getServerModules())
+                			{
+                				modules.add(serverModule.getModule());
+                			}
                 			
                 			TopologyViewPanel.this.moduleTree.addItem(server);
                 			TopologyViewPanel.this.moduleTree.setItemCaption(server, server.getName());
@@ -697,7 +704,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
             				{
             					for(BusinessStreamFlow bsFlow: businessStream.getFlows())
             		        	{
-            		        		Server server = bsFlow.getFlow().getModule().getServer();
+            		        		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
             		        		Module module = bsFlow.getFlow().getModule();
             		        		Flow flow = bsFlow.getFlow();
             		        		
@@ -748,7 +755,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
                 	{
 	                	for(BusinessStreamFlow bsFlow: businessStream.getFlows())
 	                	{
-	                		Server server = bsFlow.getFlow().getModule().getServer();
+	                		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
 	                		Module module = bsFlow.getFlow().getModule();
 	                		Flow flow = bsFlow.getFlow();
 	                		
@@ -1135,7 +1142,12 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			
 			for(Server server: servers)
 			{	
-				Set<Module> modules = server.getModules();
+				Set<Module> modules = new HashSet<Module>();
+    			
+    			for(ServerModule serverModule: server.getServerModules())
+    			{
+    				modules.add(serverModule.getModule());
+    			}
 	
 				this.moduleTree.addItem(server);
 				this.moduleTree.setCaptionAsHtml(true);
@@ -1242,7 +1254,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 				{
 					for(BusinessStreamFlow bsFlow: businessStream.getFlows())
 		        	{
-		        		Server server = bsFlow.getFlow().getModule().getServer();
+		        		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
 		        		Module module = bsFlow.getFlow().getModule();
 		        		Flow flow = bsFlow.getFlow();
 		        		
@@ -1322,7 +1334,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     	
     	Client client = ClientBuilder.newClient(clientConfig);
 		
-    	String url = flow.getModule().getServer().getUrl() + ":" + flow.getModule().getServer().getPort()
+    	String url = flow.getModule().getServerOnWhichActive().getUrl() + ":" + flow.getModule().getServerOnWhichActive().getPort()
 				+ flow.getModule().getContextRoot() 
 				+ "/rest/moduleControl/controlFlowState/"
 				+ flow.getModule().getName() 
@@ -1473,7 +1485,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
         	{
         		Component component = (Component)target;
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServerOnWhichActive(),
         				component.getFlow().getModule(), component.getFlow(), component, errorCategorisationService));
         	}
         }
@@ -1523,7 +1535,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	        else if(action.equals(ERROR_CATEGORISATION))
         	{
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServerOnWhichActive(),
         				flow.getModule(), flow, null, errorCategorisationService));
         	}
 	        
@@ -1534,7 +1546,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
         	{
         		Module module = (Module)target;
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(module.getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(module.getServerOnWhichActive(),
         				module, null, null, errorCategorisationService));
         	}
         }

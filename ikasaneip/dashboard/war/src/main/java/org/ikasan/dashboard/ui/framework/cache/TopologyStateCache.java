@@ -66,6 +66,7 @@ import org.ikasan.topology.service.TopologyService;
  * @author Ikasan Development Team
  *
  */
+// TODO sort out module server stuff
 public class TopologyStateCache
 {
 	private Logger logger = Logger.getLogger(TopologyStateCache.class);
@@ -148,18 +149,18 @@ public class TopologyStateCache
 		logger.debug("Number of servers to synch: " + servers.size());
 		for(Server server: servers)
 		{
-			logger.debug("Synchronising server: " + server.getName());
-			for(Module module: server.getModules())
-			{
-				logger.debug("Synchronising module: " + module.getName());
-				
-				HashMap<String, String> results = getFlowStates(module, username, password);
-				
-				for(String key: results.keySet())
-				{
-					stateMap.put(key, results.get(key));
-				}
-			}
+//			logger.debug("Synchronising server: " + server.getName());
+//			for(Module module: server.getModules())
+//			{
+//				logger.debug("Synchronising module: " + module.getName());
+//				
+//				HashMap<String, String> results = getFlowStates(module, username, password);
+//				
+//				for(String key: results.keySet())
+//				{
+//					stateMap.put(key, results.get(key));
+//				}
+//			}
 		}
 		
 		Broadcaster.broadcast(stateMap);
@@ -183,24 +184,24 @@ public class TopologyStateCache
 		
 		try
 		{
-			url = module.getServer().getUrl() + ":" + module.getServer().getPort() 
-					+ module.getContextRoot() 
-					+ "/rest/moduleControl/flowStates/"
-					+ module.getName();
-			
-	    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(username, password);
-	    	
-	    	ClientConfig clientConfig = new ClientConfig();
-	    	clientConfig.register(feature) ;
-	    	
-	    	Client client = ClientBuilder.newClient(clientConfig);
-	    	
-	    	logger.debug("Calling URL: " + url);
-	    	WebTarget webTarget = client.target(url);
-		    
-	    	results = (HashMap<String, String>)webTarget.request().get(HashMap.class);
-	    	
-	    	logger.debug("results: " + results);
+//			url = module.getServer().getUrl() + ":" + module.getServer().getPort() 
+//					+ module.getContextRoot() 
+//					+ "/rest/moduleControl/flowStates/"
+//					+ module.getName();
+//			
+//	    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(username, password);
+//	    	
+//	    	ClientConfig clientConfig = new ClientConfig();
+//	    	clientConfig.register(feature) ;
+//	    	
+//	    	Client client = ClientBuilder.newClient(clientConfig);
+//	    	
+//	    	logger.debug("Calling URL: " + url);
+//	    	WebTarget webTarget = client.target(url);
+//		    
+//	    	results = (HashMap<String, String>)webTarget.request().get(HashMap.class);
+//	    	
+//	    	logger.debug("results: " + results);
 		}
 		catch(Exception e)
 		{

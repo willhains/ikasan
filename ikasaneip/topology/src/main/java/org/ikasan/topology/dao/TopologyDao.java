@@ -51,6 +51,7 @@ import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Notification;
 import org.ikasan.topology.model.RoleFilter;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 
 
 
@@ -89,6 +90,19 @@ public interface TopologyDao
 	 * @param module
 	 */
 	public void save(Module module);
+
+	/**
+	 * Get all server modules
+	 * 
+	 * @return
+	 */
+	public List<ServerModule> getAllServerModules();
+	
+	/**
+	 * Save a ServerModule. Will create a new record or update an existing.
+	 * @param module
+	 */
+	public void save(ServerModule module);
 
 	/**
 	 * Get all flows.
@@ -301,5 +315,11 @@ public interface TopologyDao
 	 * @return
 	 */
 	public List<Notification> getAllNotifications();
+	
+	/**
+	 * Delete all ServerModules
+	 * @param flowId
+	 */
+	public void deleteAllServerModules();
 
 }

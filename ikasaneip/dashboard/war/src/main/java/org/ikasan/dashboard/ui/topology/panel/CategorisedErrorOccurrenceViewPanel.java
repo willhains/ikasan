@@ -75,6 +75,7 @@ import org.ikasan.spec.error.reporting.ErrorReportingManagementService;
 import org.ikasan.spec.exclusion.ExclusionManagementService;
 import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
 import org.vaadin.aceeditor.AceEditor;
 import org.vaadin.aceeditor.AceMode;
@@ -350,7 +351,15 @@ public class CategorisedErrorOccurrenceViewPanel extends Panel
 	            		return;
 	            	}
 	            	
-	            	Server server = module.getServer();
+	            	Server server = null;
+	            	
+	            	for(ServerModule serverModule: module.getServerModules())
+	            	{
+	            		if(serverModule.getStatus() != null && serverModule.getStatus().equals("ACTIVE"))
+	            		{
+	            			server = serverModule.getServer();
+	            		}
+	            	}
 	        		
 	        		String url = server.getUrl() + ":" + server.getPort()
 	        				+ module.getContextRoot() 
@@ -423,7 +432,15 @@ public class CategorisedErrorOccurrenceViewPanel extends Panel
 	            		return;
 	            	}
 	            	
-	            	Server server = module.getServer();
+	            	Server server = null;
+	            	
+	            	for(ServerModule serverModule: module.getServerModules())
+	            	{
+	            		if(serverModule.getStatus() != null && serverModule.getStatus().equals("ACTIVE"))
+	            		{
+	            			server = serverModule.getServer();
+	            		}
+	            	}
 	        		
 	        		String url = server.getUrl() + ":" + server.getPort()
 	        				+ module.getContextRoot() 

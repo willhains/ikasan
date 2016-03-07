@@ -109,7 +109,7 @@ public class DiscoveryApplication extends IkasanRestApplication
 		Module<Flow> module = moduleContainer.getModule(moduleName);
 		
 		org.ikasan.topology.model.Module topologyModule = new org.ikasan.topology.model.Module(moduleName, moduleName, module.getDescription(), 
-				"", null, "");
+				"", "");
 		
 		int flowOrder = 0;
 		for(Flow flow: module.getFlows())

@@ -179,7 +179,9 @@ public class PolicyAssociationModuleSearchWindow extends Window
             	
             	for(Module module: modules)
             	{
-            		resultsTable.addItem(new Object[]{module.getServer().getName(), module.getName(), module.getDescription()}, module);
+            		// TODO sort out server name
+//            		resultsTable.addItem(new Object[]{module.getServer().getName(), module.getName(), module.getDescription()}, module);
+            		resultsTable.addItem(new Object[]{"Server Name", module.getName(), module.getDescription()}, module);
             	}
             }
         });

@@ -153,7 +153,7 @@ public class ComponentConfigurationWindow extends Window
     	
     	if(configuration == null)
     	{
-    		Server server = component.getFlow().getModule().getServer();
+    		Server server = component.getFlow().getModule().getServerOnWhichActive();
     		
     		String url = server.getUrl() + ":" + server.getPort()
     				+ component.getFlow().getModule().getContextRoot()

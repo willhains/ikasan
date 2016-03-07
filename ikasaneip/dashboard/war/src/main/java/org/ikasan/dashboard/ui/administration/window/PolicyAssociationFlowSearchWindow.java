@@ -182,7 +182,9 @@ public class PolicyAssociationFlowSearchWindow extends Window
             	
             	for(Flow flow: flows)
             	{
-            		resultsTable.addItem(new Object[]{flow.getModule().getServer().getName(), flow.getModule().getName(), flow.getName()}, flow);
+            		// TODO sort out servername
+//            		resultsTable.addItem(new Object[]{flow.getModule().getServer().getName(), flow.getModule().getName(), flow.getName()}, flow);
+            		resultsTable.addItem(new Object[]{"Server Name", flow.getModule().getName(), flow.getName()}, flow);
             	}
             }
         });

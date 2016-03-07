@@ -314,7 +314,7 @@ public class ModuleInitialisationServiceImpl implements ModuleInitialisationServ
         if (moduleDB==null)
         {
             logger.info("module does not exist [" + module.getName() + "], creating...");
-            moduleDB = new  org.ikasan.topology.model.Module(module.getName(), platformContext.getApplicationName(), module.getDescription(),module.getVersion(), null, null);
+            moduleDB = new  org.ikasan.topology.model.Module(module.getName(), platformContext.getApplicationName(), module.getDescription(), module.getVersion(), null);
             this.topologyService.save(moduleDB);
         }
 

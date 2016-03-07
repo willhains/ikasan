@@ -183,21 +183,22 @@ public class FlowStateTable extends DashboardTable
 		
 		for(Server server: servers)
 		{
-			for(Module module: server.getModules())
-			{
-				for(Flow flow: module.getFlows())
-				{
-					String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
-					
-					if(state == null)
-					{
-						state = "unknown";
-					}
-					
-					this.addItem(new Object[] {flow.getModule().getName(),
-							flow.getName(), state}, flow);
-				}
-			}
+			// TODO sort out module server stuff
+//			for(Module module: server.getModules())
+//			{
+//				for(Flow flow: module.getFlows())
+//				{
+//					String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
+//					
+//					if(state == null)
+//					{
+//						state = "unknown";
+//					}
+//					
+//					this.addItem(new Object[] {flow.getModule().getName(),
+//							flow.getName(), state}, flow);
+//				}
+//			}
 		}
 	}
 	
