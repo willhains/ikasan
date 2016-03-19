@@ -41,6 +41,8 @@
 package org.ikasan.wiretap.listener;
 
 import org.apache.log4j.Logger;
+import org.ikasan.component.endpoint.rulecheck.service.RuleService;
+import org.ikasan.scheduler.ScheduledJobFactory;
 import org.ikasan.spec.flow.FlowElement;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.flow.FlowEventListener;
@@ -49,11 +51,13 @@ import org.ikasan.trigger.dao.TriggerDao;
 import org.ikasan.trigger.model.Trigger;
 import org.ikasan.trigger.model.TriggerRelationship;
 import org.ikasan.trigger.service.FlowEventJob;
+import org.quartz.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.ParseException;
+import java.util.*;
+
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
  * The <code>JobAwareFlowEventListener</code> provides a
@@ -87,6 +91,22 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
     /** Data access object for dynamic trigger persistence */
     private TriggerDao triggerDao;
 
+    /**
+     * Scheduler Job factory
+     */
+    private ScheduledJobFactory scheduledJobFactory;
+
+    /**
+     * Scheduler
+     */
+    private Scheduler scheduler;
+
+    /**
+     * Rule service
+     */
+    private RuleService ruleService;
+
+
     /** Logger instance */
     private static final Logger logger = Logger.getLogger(JobAwareFlowEventListener.class);
 
@@ -100,11 +120,15 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
      * @param flowEventJobs - The list of flow event jobs
      * @param triggerDao - The DAO for the trigger
      */
-    public JobAwareFlowEventListener(Map<String, FlowEventJob> flowEventJobs, TriggerDao triggerDao)
+    public JobAwareFlowEventListener(Map<String, FlowEventJob> flowEventJobs, TriggerDao triggerDao,
+                                     ScheduledJobFactory scheduledJobFactory, Scheduler scheduler, RuleService ruleService)
     {
         super();
         this.flowEventJobs = flowEventJobs;
         this.triggerDao = triggerDao;
+        this.scheduledJobFactory = scheduledJobFactory;
+        this.scheduler = scheduler;
+        this.ruleService = ruleService;
         loadTriggers();
     }
 
@@ -170,6 +194,7 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
     {
         this.triggerDao.save(trigger);
         mapTrigger(trigger);
+
     }
 
     /**
@@ -381,6 +406,10 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
     public void addJob(String name, FlowEventJob flowEventJob)
     {
         this.flowEventJobs.put(name, flowEventJob);
+        if(flowEventJob instanceof Job)
+        {
+            addNewJobToScheduler((Job)flowEventJob,name,"");
+        }
     }
 
     /**
@@ -390,6 +419,74 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
      */
     public FlowEventJob removeJob(String name)
     {
+        FlowEventJob flowEventJob = this.flowEventJobs.get(name);
+        if(flowEventJob instanceof Job)
+        {
+            removeScheduledJobFrom((Job) flowEventJob, name);
+        }
+
         return this.flowEventJobs.remove(name);
     }
+
+    /**
+     *  Add new Job to scheduler
+     *
+     * @throws java.lang.RuntimeException
+     */
+    protected void addNewJobToScheduler(Job job, String name,String cronExpression) {
+        try {
+
+            JobDetail jobDetail = scheduledJobFactory.createJobDetail(job, job.getClass(),name,name);
+            // create trigger
+            JobKey jobkey = jobDetail.getKey();
+
+            if (!this.scheduler.checkExists(jobkey)) {
+                org.quartz.Trigger trigger = getCronTrigger(jobkey, cronExpression);
+                Date scheduledDate = scheduler.scheduleJob(jobDetail, trigger);
+                logger.info("Scheduled rule check for ["
+                        + jobkey.getName()
+                        + "] [" + jobkey.getGroup()
+                        + "] starting at [" + scheduledDate + "]");
+            }
+
+        } catch (SchedulerException e) {
+            throw new RuntimeException(e);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Method factory for creating a cron trigger
+     *
+     * @return jobDetail
+     * @throws java.text.ParseException
+     */
+    protected org.quartz.Trigger getCronTrigger(JobKey jobkey, String cronExpression) throws ParseException {
+        return newTrigger().withIdentity(jobkey.getName(), jobkey.getGroup()).withSchedule(cronSchedule(cronExpression))
+                .build();
+    }
+
+    /**
+     * Stop the scheduled job and triggers
+     */
+    public void removeScheduledJobFrom(Job job, String name)
+    {
+        try
+        {
+            JobDetail jobDetail = scheduledJobFactory.createJobDetail(job, job.getClass(), name, name);
+            // create trigger
+
+            JobKey jobKey = jobDetail.getKey();
+            if (this.scheduler.checkExists(jobKey))
+            {
+                this.scheduler.deleteJob(jobKey);
+            }
+        }
+        catch (SchedulerException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
