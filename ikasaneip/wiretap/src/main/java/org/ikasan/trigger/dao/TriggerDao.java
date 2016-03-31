@@ -58,14 +58,21 @@ public interface TriggerDao {
 	 * @param trigger
 	 */
 	public void save(Trigger trigger);
-	
+
 	/**
 	 * returns all persisted Triggers
 	 * 
 	 * @return List of Triggers
 	 */
 	public List<Trigger> findAll();
-	
+
+	/**
+	 * returns all persisted Triggers for given module
+	 *
+	 * @return List of Triggers
+	 */
+	public List<Trigger> findTriggers(String moduleName);
+
 	/**
 	 * returns all persisted Triggers, narrowed by module flow and element
 	 * 

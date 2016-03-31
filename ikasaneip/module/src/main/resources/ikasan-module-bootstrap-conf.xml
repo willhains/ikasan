@@ -6,10 +6,11 @@
 
     <!-- bootstraps the module based on the loader configuration -->
     <bean id="moduleLoader" class="org.ikasan.module.service.ModuleInitialisationServiceImpl">
-        <constructor-arg ref="moduleContainer" />
-        <constructor-arg ref="moduleActivator" />
-        <constructor-arg ref="userDetailsService" />
-        <constructor-arg ref="localTxTopologyService" />
+        <constructor-arg name="moduleContainer" ref="moduleContainer" />
+        <constructor-arg name="moduleActivator" ref="moduleActivator" />
+        <constructor-arg name="userService" ref="userDetailsService" />
+        <constructor-arg name="topologyService" ref="localTxTopologyService" />
+        <constructor-arg name="jobAwareFlowEventListener" ref="wiretapFlowEventListener" />
         <property name="loaderConfiguration" value="loader-conf.xml" />
     </bean>
 

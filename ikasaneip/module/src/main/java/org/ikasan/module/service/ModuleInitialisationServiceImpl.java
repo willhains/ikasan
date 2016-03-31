@@ -50,6 +50,7 @@ import org.ikasan.spec.module.ModuleContainer;
 import org.ikasan.spec.module.ModuleInitialisationService;
 import org.ikasan.spec.monitor.Monitor;
 import org.ikasan.topology.service.TopologyService;
+import org.ikasan.wiretap.listener.JobAwareFlowEventListener;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.beans.BeansException;
@@ -99,6 +100,8 @@ public class ModuleInitialisationServiceImpl implements ModuleInitialisationServ
     /** Container for Spring application contexts loaded internally by this class */
     private List<AbstractApplicationContext> innerContexts;
 
+    private JobAwareFlowEventListener jobAwareFlowEventListener;
+
     /**
      * Constructor
      * @param moduleContainer
@@ -106,7 +109,8 @@ public class ModuleInitialisationServiceImpl implements ModuleInitialisationServ
      * @param userService
      */
     public ModuleInitialisationServiceImpl(ModuleContainer moduleContainer, ModuleActivator moduleActivator,
-                                           UserService userService, TopologyService topologyService)
+                                           UserService userService, TopologyService topologyService,
+                                           JobAwareFlowEventListener jobAwareFlowEventListener)
     {
         super();
         this.moduleContainer = moduleContainer;
@@ -133,6 +137,7 @@ public class ModuleInitialisationServiceImpl implements ModuleInitialisationServ
             throw new IllegalArgumentException("userService cannot be 'null'");
         }
         innerContexts = new LinkedList<>();
+        this.jobAwareFlowEventListener = jobAwareFlowEventListener;
     }
 
     /*
@@ -216,6 +221,7 @@ public class ModuleInitialisationServiceImpl implements ModuleInitialisationServ
                     logger.error("There was a problem initialising module", re);
                 }
             }
+            jobAwareFlowEventListener.loadTriggers();
         }
     }
 

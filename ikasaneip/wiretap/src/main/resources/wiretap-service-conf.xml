@@ -61,6 +61,7 @@
         <constructor-arg name="scheduledJobFactory" ref="scheduledJobFactory"/>
         <constructor-arg name="scheduler" ref="scheduler"/>
         <constructor-arg name="ruleService" ref="ruleService"/>
+        <constructor-arg name="moduleService" ref="moduleService"/>
     </bean>
 
 	<bean id="wiretapService"
@@ -123,7 +124,6 @@
     </bean>
 
     <bean id="scheduleRuleEventJob" class="org.ikasan.trigger.service.ScheduleRuleEventJob">
-        <property name="managedResourceRecoveryManager" ref="managedResourceRecoveryManager"/>
         <property name="ruleService" ref="ruleService"/>
     </bean>
 

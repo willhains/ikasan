@@ -40,12 +40,14 @@
  */
 package org.ikasan.trigger.service;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.log4j.Logger;
 import org.ikasan.component.endpoint.rulecheck.Rule;
 import org.ikasan.component.endpoint.rulecheck.service.RuleService;
+import org.ikasan.spec.flow.Flow;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.management.ManagedResourceRecoveryManager;
+import org.ikasan.spec.module.Module;
+import org.ikasan.spec.module.ModuleService;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -70,18 +72,23 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     private RuleService ruleService;
 
     /**
+     * Container for modules
+     */
+    private ModuleService moduleService;
+    /**
      * Recovery manager for this Managed Resource and any extending implementations of it
      */
     protected ManagedResourceRecoveryManager managedResourceRecoveryManager;
-
-
-    public static final String RULE_NAME = "ruleName";
 
     public static final String RULE_CLASS = "ruleClass";
 
     public static final String IS_ENABLED = "isEnabled";
 
     public static final String CRON_EXPRESSION = "cronExpression";
+
+    public static final String RULE_CONFIGURATION_CLASS = "ruleConfigurationClass";
+
+    public static final String RULE_CONFIGURATION_PREFIX = "ruleConfiguration.";
 
     /**
      * logger instance
@@ -95,10 +102,11 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
 
     static
     {
-        parameterNames.add(RULE_NAME);
         parameterNames.add(RULE_CLASS);
+        parameterNames.add(RULE_CONFIGURATION_CLASS);
         parameterNames.add(IS_ENABLED);
         parameterNames.add(CRON_EXPRESSION);
+        parameterNames.add(RULE_CONFIGURATION_PREFIX + "timeInterval");
     }
 
     /*
@@ -112,16 +120,10 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     public void execute(String location, String moduleName, String flowName, FlowEvent event,
             Map<String, String> params)
     {
-        String ruleName = params.get(RULE_NAME);
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("about to check Rule with name=[" + ruleName + "]");
-        }
 
-
-        Rule rule= ruleService.getRule(ruleName);
+        String ruleName = location+"|"+flowName;
+        Rule rule = ruleService.getRule(ruleName);
         rule.update(event);
-
     }
 
     /*
@@ -144,18 +146,6 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     public Map<String, String> validateParameters(Map<String, String> params)
     {
         Map<String, String> result = new HashMap<String, String>();
-        if (!params.containsKey(RULE_NAME))
-        {
-            result.put(RULE_NAME, RULE_NAME + " is mandatory");
-        }
-        else
-        {
-            String ruleName = params.get(RULE_NAME);
-            if (ruleName == null || ruleName.isEmpty())
-            {
-                result.put(RULE_NAME, RULE_NAME + " must not be empty");
-            }
-        }
 
         return result;
     }
@@ -164,30 +154,18 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     {
         try
         {
-
             String ruleName = jobExecutionContext.getJobDetail().getKey().getName();
-            Rule rule= ruleService.getRule(ruleName);
+            String moduleName = jobExecutionContext.getJobDetail().getKey().getGroup();
+            //Module module = moduleService.getModule(moduleName);
+            //Flow flow = (Flow) module.getFlows().get(0);
+
+            Rule rule = ruleService.getRule(ruleName);
             rule.check(jobExecutionContext);
         }
         catch (Throwable t)
         {
             this.managedResourceRecoveryManager.recover(t);
         }
-    }
-
-    public ManagedResourceRecoveryManager getManagedResourceRecoveryManager()
-    {
-        return managedResourceRecoveryManager;
-    }
-
-    public void setManagedResourceRecoveryManager(ManagedResourceRecoveryManager managedResourceRecoveryManager)
-    {
-        this.managedResourceRecoveryManager = managedResourceRecoveryManager;
-    }
-
-    public RuleService getRuleService()
-    {
-        return ruleService;
     }
 
     public void setRuleService(RuleService ruleService)

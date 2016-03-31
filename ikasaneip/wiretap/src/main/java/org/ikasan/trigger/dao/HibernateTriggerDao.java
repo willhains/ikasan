@@ -72,6 +72,22 @@ public class HibernateTriggerDao extends HibernateDaoSupport implements TriggerD
     }
 
     /* (non-Javadoc)
+	 * @see org.ikasan.trigger.dao.TriggerDao#findTriggers(java.lang.String, java.lang.String, java.lang.String)
+	 */
+    @Override
+    public List<Trigger> findTriggers(String moduleName)
+    {
+        DetachedCriteria criteria = DetachedCriteria.forClass(Trigger.class);
+
+        if(moduleName != null && moduleName.length() > 0);
+        {
+            criteria.add(Restrictions.eq("moduleName", moduleName));
+        }
+
+        return (List<Trigger>)this.getHibernateTemplate().findByCriteria(criteria);
+    }
+
+    /* (non-Javadoc)
      * @see org.ikasan.framework.flow.event.dao.TriggerDao#findById(java.lang.Long)
      */
     public Trigger findById(Long triggerId)
