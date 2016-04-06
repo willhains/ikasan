@@ -122,7 +122,7 @@ public class FlowConfigurationWindow extends AbstractConfigurationWindow
     	
     	if(configuration == null)
     	{
-    		Server server = flow.getModule().getServer();
+    		Server server = flow.getModule().getServerOnWhichActive();
     		
     		String url = server.getUrl() + ":" + server.getPort()
     				+ flow.getModule().getContextRoot()

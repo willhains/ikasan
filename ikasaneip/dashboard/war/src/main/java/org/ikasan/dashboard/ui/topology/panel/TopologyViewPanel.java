@@ -45,7 +45,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -663,27 +662,22 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
                 		
                 		for(Server server: servers)
                 		{
-                			Set<Module> modules = new HashSet<Module>();
-                			
-                			for(ServerModule serverModule: server.getServerModules())
-                			{
-                				modules.add(serverModule.getModule());
-                			}
+                			Set<ServerModule> modules = server.getServerModules();
                 			
                 			TopologyViewPanel.this.moduleTree.addItem(server);
                 			TopologyViewPanel.this.moduleTree.setItemCaption(server, server.getName());
                 			TopologyViewPanel.this.moduleTree.setChildrenAllowed(server, true);
                 			TopologyViewPanel.this.moduleTree.setItemIcon(server, VaadinIcons.SERVER);
 
-                	        for(Module module: modules)
+                	        for(ServerModule module: modules)
                 	        {
                 	        	TopologyViewPanel.this.moduleTree.addItem(module);
-                	        	TopologyViewPanel.this.moduleTree.setItemCaption(module, module.getName());
+                	        	TopologyViewPanel.this.moduleTree.setItemCaption(module, module.getModule().getName());
                 	        	TopologyViewPanel.this.moduleTree.setParent(module, server);
                 	        	TopologyViewPanel.this.moduleTree.setChildrenAllowed(module, true);
                 	        	TopologyViewPanel.this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
                 	            
-                	            Set<Flow> flows = module.getFlows();
+                	            Set<Flow> flows = module.getModule().getFlows();
                 	
                 	            for(Flow flow: flows)
                 	            {
@@ -1187,12 +1181,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			
 			for(Server server: servers)
 			{	
-				Set<Module> modules = new HashSet<Module>();
-    			
-    			for(ServerModule serverModule: server.getServerModules())
-    			{
-    				modules.add(serverModule.getModule());
-    			}
+				Set<ServerModule> modules = server.getServerModules();
 	
 				this.moduleTree.addItem(server);
 				this.moduleTree.setCaptionAsHtml(true);
@@ -1205,15 +1194,15 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	            this.moduleTree.setChildrenAllowed(server, true);
 	        	
 	
-		        for(Module module: modules)
+		        for(ServerModule module: modules)
 		        {	        	
 		            this.moduleTree.addItem(module);
-		            this.moduleTree.setItemCaption(module, module.getName());
+		            this.moduleTree.setItemCaption(module, module.getModule().getName());
 		            this.moduleTree.setParent(module, server);
 		            this.moduleTree.setChildrenAllowed(module, true);
 		            this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
 		            
-		            Set<Flow> flows = module.getFlows();
+		            Set<Flow> flows = module.getModule().getFlows();
 		
 		            for(Flow flow: flows)
 		            {
@@ -1691,4 +1680,3 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	}
 
 }
-

@@ -88,6 +88,7 @@ import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
 import org.ikasan.wiretap.service.TriggerManagementService;
 import org.vaadin.teemu.VaadinIcons;
@@ -472,7 +473,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
 		
 		for(Server server: servers)
 		{	
-			Set<Module> modules = server.getModules();
+			Set<ServerModule> modules = server.getServerModules();
 
 			this.moduleTree.addItem(server);
         	
@@ -481,15 +482,15 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
             this.moduleTree.setChildrenAllowed(server, true);
         	
 
-	        for(Module module: modules)
+	        for(ServerModule module: modules)
 	        {	        	
 	            this.moduleTree.addItem(module);
-	            this.moduleTree.setItemCaption(module, module.getName());
+	            this.moduleTree.setItemCaption(module, module.getModule().getName());
 	            this.moduleTree.setParent(module, server);
 	            this.moduleTree.setChildrenAllowed(module, true);
 	            this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
 	            
-	            Set<Flow> flows = module.getFlows();
+	            Set<Flow> flows = module.getModule().getFlows();
 	
 	            for(Flow flow: flows)
 	            {
@@ -557,7 +558,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
     	
     	Client client = ClientBuilder.newClient(clientConfig);
 		
-    	String url = flow.getModule().getServer().getUrl() + ":" + flow.getModule().getServer().getPort()
+    	String url = flow.getModule().getServerOnWhichActive().getUrl() + ":" + flow.getModule().getServerOnWhichActive().getPort()
 				+ flow.getModule().getContextRoot() 
 				+ "/rest/moduleControl/controlFlowState/"
 				+ flow.getModule().getName() 
@@ -729,7 +730,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
         	{
         		Component component = (Component)target;
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServerOnWhichActive(),
         				component.getFlow().getModule(), component.getFlow(), component, errorCategorisationService));
         	}
         }
@@ -769,7 +770,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
 	        else if(action.equals(ERROR_CATEGORISATION))
         	{
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServerOnWhichActive(),
         				flow.getModule(), flow, null, errorCategorisationService));
         	}
 	        
@@ -780,7 +781,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
         	{
         		Module module = (Module)target;
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(module.getServer(),
+        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(module.getServerOnWhichActive(),
         				module, null, null, errorCategorisationService));
         	}
         }

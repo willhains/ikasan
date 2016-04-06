@@ -616,7 +616,7 @@ public class ResubmitIgnoreStatusPanel extends Panel
 	        		return;
 	        	}
 	        	
-	        	Server server = module.getServer();
+	        	Server server = module.getServerOnWhichActive();
 	        	
 	        	if(server == null)
 	        	{
