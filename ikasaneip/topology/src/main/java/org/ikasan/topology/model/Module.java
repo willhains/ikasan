@@ -386,18 +386,6 @@ public class Module implements Comparable<Module>
 		return true;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "Module [id=" + id + ", name=" + name + ", description="
-				+ description + ", contextRoot=" + contextRoot
-				+ ", diagramUrl=" + diagramUrl + ", version=" + version
-				+ ", serverModules=" + serverModules + ", flows=" + flows
-				+ ", createdDateTime=" + createdDateTime + ", updatedDateTime="
-				+ updatedDateTime + "]";
-	}
 
 	/**
      * Natural ordering on the name of the module
