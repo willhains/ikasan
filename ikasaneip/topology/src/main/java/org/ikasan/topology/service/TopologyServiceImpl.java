@@ -234,7 +234,7 @@ public class TopologyServiceImpl implements TopologyService
     	
     	ObjectMapper mapper = new ObjectMapper();
     	mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    	
+    	    	
     	// Firstly sort out the server module relationships
 		for(Server server: servers)
 		{			
@@ -265,6 +265,14 @@ public class TopologyServiceImpl implements TopologyService
 			    	// We may not find the module on the server so just move on to the next module.
 			    	logger.debug("Caught exception attempting to discover module with the following URL: " + url 
 			    			+ ". Ignoring and moving on to next module. Exception message: " + e.getMessage());
+			    	
+			    	ServerModule serverModule = this.topologyDao.getServerModule(server.getId(), module.getId());
+			    	
+			    	if(serverModule != null)
+			    	{
+			    		this.topologyDao.deleteServerModule(serverModule);
+			    	}
+			    	
 			    	continue;
 			    }
 			    
@@ -275,7 +283,8 @@ public class TopologyServiceImpl implements TopologyService
 			    
 			    serverModules.add(serverModule);
 			    
-			    if(module.getServerModules() != null && !module.getServerModules().contains(serverModule))
+			    if(module.getServerModules() == null ||
+			    		(module.getServerModules() != null && !module.getServerModules().contains(serverModule)))
 			    {
 			    	this.topologyDao.save(serverModule);
 			    }

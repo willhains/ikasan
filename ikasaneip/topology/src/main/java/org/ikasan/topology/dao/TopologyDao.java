@@ -322,4 +322,17 @@ public interface TopologyDao
 	 */
 	public void deleteAllServerModules();
 
+	/**
+	 * 
+	 * @param serverId
+	 * @param moduleId
+	 */
+	public ServerModule getServerModule(Long serverId, Long moduleId);
+
+	/**
+	 * 
+	 * @param serverModule
+	 */
+	public void deleteServerModule(ServerModule serverModule);
+
 }

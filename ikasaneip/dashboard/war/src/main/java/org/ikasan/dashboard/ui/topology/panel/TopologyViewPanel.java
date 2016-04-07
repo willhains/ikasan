@@ -66,9 +66,7 @@ import org.ikasan.dashboard.ui.framework.constants.DashboardConstants;
 import org.ikasan.dashboard.ui.framework.constants.SecurityConstants;
 import org.ikasan.dashboard.ui.framework.event.FlowStateEvent;
 import org.ikasan.dashboard.ui.framework.util.DashboardSessionValueConstants;
-import org.ikasan.dashboard.ui.framework.util.PolicyLinkTypeConstants;
 import org.ikasan.dashboard.ui.mappingconfiguration.component.IkasanSmallCellStyleGenerator;
-import org.ikasan.dashboard.ui.monitor.component.MonitorIcons;
 import org.ikasan.dashboard.ui.topology.component.ActionedErrorOccurrenceTab;
 import org.ikasan.dashboard.ui.topology.component.ActionedExclusionTab;
 import org.ikasan.dashboard.ui.topology.component.BusinessStreamTab;
@@ -103,7 +101,6 @@ import org.ikasan.spec.search.PagedSearchResult;
 import org.ikasan.systemevent.model.SystemEvent;
 import org.ikasan.systemevent.service.SystemEventService;
 import org.ikasan.topology.model.BusinessStream;
-import org.ikasan.topology.model.BusinessStreamFlow;
 import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
@@ -117,8 +114,6 @@ import org.vaadin.teemu.VaadinIcons;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.ikasan.topology.exception.DiscoveryException;
-import com.vaadin.data.Property.ValueChangeEvent;
-import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.event.Action;
 import com.vaadin.event.ItemClickEvent;
@@ -268,8 +263,9 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	
 	private HashMap<String, AbstractComponent> tabComponentMap = new HashMap<String, AbstractComponent>();
 	
-//	private ReplayManagementService<ReplayEvent, ReplayAudit> replayManagementService;
-//	private ReplayService<ReplayEvent, ReplayAuditEvent> replayService;
+
+	private HashMap<String, Flow> flowMap = new HashMap<String, Flow>();
+	private HashMap<String, Component> componentMap = new HashMap<String, Component>();
 	
 	
 	
@@ -579,34 +575,40 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			@Override
 			public String getStyle(Tree source, Object itemId)
 			{
-				if(itemId instanceof Flow)
+				if(itemId instanceof String)
 				{
-					Flow flow = (Flow)itemId;
-					
-					String state = flowStates.get(flow.getModule().getName() + "-" + flow.getName());
-	            	
-					logger.debug(flow.getModule().getName() + "-" + flow.getName() + " State = " + state);
-					
-	    			if(state != null && state.equals(RUNNING))
-	    			{
-	    				return "greenicon";
-	    			}
-	    			else if(state != null && state.equals(RECOVERING))
-	    			{
-	    				return "orangeicon";
-	    			}
-	    			else if (state != null && state.equals(STOPPED))
-	    			{
-	    				return "redicon";
-	    			}
-	    			else if (state != null && state.equals(STOPPED_IN_ERROR))
-	    			{
-	    				return "redicon";
-	    			}
-	    			else if (state != null && state.equals(PAUSED))
-	    			{
-	    				return "indigoicon";
-	    			}
+					if(((String)itemId).startsWith("flow_"))
+					{
+						Flow flow = flowMap.get(itemId);
+						
+						for(ServerModule serverModule: flow.getModule().getServerModules())
+						{
+							String state = flowStates.get(serverModule.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+			            	
+							logger.info(serverModule.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+							
+			    			if(state != null && state.equals(RUNNING))
+			    			{
+			    				return "greenicon";
+			    			}
+			    			else if(state != null && state.equals(RECOVERING))
+			    			{
+			    				return "orangeicon";
+			    			}
+			    			else if (state != null && state.equals(STOPPED))
+			    			{
+			    				return "redicon";
+			    			}
+			    			else if (state != null && state.equals(STOPPED_IN_ERROR))
+			    			{
+			    				return "redicon";
+			    			}
+			    			else if (state != null && state.equals(PAUSED))
+			    			{
+			    				return "indigoicon";
+			    			}
+						}
+					}
 				}				
 				
 				return "";
@@ -637,229 +639,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		});
  		
 		layout.addComponent(filtersPopup);
-		
-		this.treeViewBusinessStreamCombo = new ComboBox("Business Stream");
 				
-		this.treeViewBusinessStreamCombo.addValueChangeListener(new ValueChangeListener() {
-            public void valueChange(ValueChangeEvent event) 
-            {
-                if(event.getProperty() != null && event.getProperty().getValue() != null)
-                {
-                	businessStream  = (BusinessStream)event.getProperty().getValue();
-                	
-                	logger.debug("Value changed to business stream: " + businessStream.getName());
-                
-                	moduleTree.removeAllItems();
-                	
-                	final IkasanAuthentication authentication = (IkasanAuthentication)VaadinService.getCurrentRequest().getWrappedSession()
-            	        	.getAttribute(DashboardSessionValueConstants.USER);
-            		
-            		if(authentication != null 
-                			&& ((authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY) || authentication.hasGrantedAuthority(SecurityConstants.VIEW_TOPOLOGY_AUTHORITY))
-                			&& businessStream.getName().equals("All")))
-                	{
-                		List<Server> servers = TopologyViewPanel.this.topologyService.getAllServers();
-                		
-                		for(Server server: servers)
-                		{
-                			Set<ServerModule> modules = server.getServerModules();
-                			
-                			TopologyViewPanel.this.moduleTree.addItem(server);
-                			TopologyViewPanel.this.moduleTree.setItemCaption(server, server.getName());
-                			TopologyViewPanel.this.moduleTree.setChildrenAllowed(server, true);
-                			TopologyViewPanel.this.moduleTree.setItemIcon(server, VaadinIcons.SERVER);
-
-                	        for(ServerModule module: modules)
-                	        {
-                	        	TopologyViewPanel.this.moduleTree.addItem(module);
-                	        	TopologyViewPanel.this.moduleTree.setItemCaption(module, module.getModule().getName());
-                	        	TopologyViewPanel.this.moduleTree.setParent(module, server);
-                	        	TopologyViewPanel.this.moduleTree.setChildrenAllowed(module, true);
-                	        	TopologyViewPanel.this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
-                	            
-                	            Set<Flow> flows = module.getModule().getFlows();
-                	
-                	            for(Flow flow: flows)
-                	            {
-                	            	TopologyViewPanel.this.moduleTree.addItem(flow);
-                	            	TopologyViewPanel.this.moduleTree.setItemCaption(flow, flow.getName());
-                	            	TopologyViewPanel.this.moduleTree.setParent(flow, module);
-                	            	TopologyViewPanel.this.moduleTree.setChildrenAllowed(flow, true);
-                	                            	            	                	            	                	            	
-                	            	if(flow.isConfigurable())
-            	                	{
-                	            		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE);
-            	                	}
-            	                	else
-            	                	{
-            	                		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE_O);
-            	                	}
-                	                
-                	                Set<Component> components = flow.getComponents();
-                	
-                	                for(Component component: components)
-                	                {
-                	                	TopologyViewPanel.this.moduleTree.addItem(component);
-                	                	TopologyViewPanel.this.moduleTree.setParent(component, flow);
-                	                	TopologyViewPanel.this.moduleTree.setItemCaption(component, component.getName());
-                	                	TopologyViewPanel.this.moduleTree.setChildrenAllowed(component, false);
-                	                	
-                	                	if(component.isConfigurable())
-                	                	{
-                	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG);
-                	                	}
-                	                	else
-                	                	{
-                	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG_O);
-                	                	}
-                	                }
-                	            }
-                	        }
-                		}
-                	}
-                	else if(authentication != null 
-                			&& !authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)
-                			&& businessStream.getName().equals("All"))
-                	{
-                		List<BusinessStream> businessStreams = topologyService.getAllBusinessStreams();
-            			
-            			for(BusinessStream businessStream: businessStreams)
-            			{
-            				if(authentication.canAccessLinkedItem(PolicyLinkTypeConstants.BUSINESS_STREAM_LINK_TYPE, businessStream.getId()))
-            				{
-            					for(BusinessStreamFlow bsFlow: businessStream.getFlows())
-            		        	{
-            		        		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
-            		        		Module module = bsFlow.getFlow().getModule();
-            		        		Flow flow = bsFlow.getFlow();
-            		        		
-            		        		if(!moduleTree.containsId(server))
-            		        		{
-            		            		moduleTree.addItem(server);
-            		                    moduleTree.setItemCaption(server, server.getName());
-            		                    moduleTree.setChildrenAllowed(server, true);
-            		                    moduleTree.setItemIcon(server, VaadinIcons.SERVER);
-            		        		}
-            		                
-            		                moduleTree.addItem(module);
-            		                moduleTree.setItemCaption(module, module.getName());
-            		                moduleTree.setParent(module, server);
-            		                moduleTree.setChildrenAllowed(module, true);
-            		                moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
-            		                
-            		                moduleTree.addItem(flow);
-            		                moduleTree.setItemCaption(flow, flow.getName());
-            		                moduleTree.setParent(flow, module);
-            		                moduleTree.setChildrenAllowed(flow, true);
-            		                
-            		                if(flow.isConfigurable())
-            	                	{
-                	            		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE);
-            	                	}
-            	                	else
-            	                	{
-            	                		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE_O);
-            	                	}
-            		                
-            		                Set<Component> components = flow.getComponents();
-            		
-            		                for(Component component: components)
-            		                {
-            		                	moduleTree.addItem(component);
-            		                	moduleTree.setParent(component, flow);
-            		                	moduleTree.setItemCaption(component, component.getName());
-            		                	moduleTree.setChildrenAllowed(component, false);
-            		                	
-            		                	if(component.isConfigurable())
-                	                	{
-                	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG);
-                	                	}
-                	                	else
-                	                	{
-                	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG_O);
-                	                	}
-            		                }
-            		        	}
-            	        	}
-            			}
-                	}
-                	else
-                	{
-	                	for(BusinessStreamFlow bsFlow: businessStream.getFlows())
-	                	{
-	                		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
-	                		Module module = bsFlow.getFlow().getModule();
-	                		Flow flow = bsFlow.getFlow();
-	                		
-	                		if(!moduleTree.containsId(server))
-	                		{
-		                		moduleTree.addItem(server);
-		                        moduleTree.setItemCaption(server, server.getName());
-		                        moduleTree.setChildrenAllowed(server, true);
-		                        moduleTree.setItemIcon(server, VaadinIcons.SERVER);
-	                		}
-	                        
-	                        moduleTree.addItem(module);
-	    	                moduleTree.setItemCaption(module, module.getName());
-	                        moduleTree.setParent(module, server);
-	    	                moduleTree.setChildrenAllowed(module, true);
-	    	                moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
-	                        
-	                        moduleTree.addItem(flow);
-	    	                moduleTree.setItemCaption(flow, flow.getName());
-	                        moduleTree.setParent(flow, module);
-	    	                moduleTree.setChildrenAllowed(flow, true);
-	    	                
-	    	                if(flow.isConfigurable())
-    	                	{
-        	            		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE);
-    	                	}
-    	                	else
-    	                	{
-    	                		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.ELLIPSIS_CIRCLE_O);
-    	                	}
-	    	                
-	    	                Set<Component> components = flow.getComponents();
-	    	
-	    	                for(Component component: components)
-	    	                {
-	    	                	moduleTree.addItem(component);
-	    	                	moduleTree.setParent(component, flow);
-	    	                	moduleTree.setItemCaption(component, component.getName());
-	    	                	moduleTree.setChildrenAllowed(component, false);
-	    	                	
-	    	                	if(component.isConfigurable())
-        	                	{
-        	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG);
-        	                	}
-        	                	else
-        	                	{
-        	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG_O);
-        	                	}
-	    	                }
-	                	}
-                	}        	
-                }
-                
-                for (Iterator<?> it = moduleTree.rootItemIds().iterator(); it.hasNext();) 
-        		{
-        			moduleTree.expandItemsRecursively(it.next());
-        		}
-        		
-        		for (Iterator<?> it = moduleTree.getItemIds().iterator(); it.hasNext();) 
-        		{
-        			Object nextItem = it.next();
-        			if(nextItem instanceof Module)
-        			{
-        				moduleTree.collapseItemsRecursively(nextItem);
-        			}
-        		}
-        		
-            }
-        });
-
-		this.treeViewBusinessStreamCombo.setWidth("250px");
-		layout.addComponent(this.treeViewBusinessStreamCombo);
+		refreshTree();
 		
 		Button discoverButton = new Button("Discover");
 		discoverButton.setStyleName(ValoTheme.BUTTON_SMALL);
@@ -1103,6 +884,9 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	
 	protected void refresh()
 	{
+//		flowMap = new HashMap<String, Flow>();
+//		componentMap = new HashMap<String, Component>();
+//		
 		logger.debug("Start refresh!");
 		if(this.tabsheet == null)
 		{
@@ -1111,8 +895,6 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			this.createTabSheet();
 		}
 		
-//		logger.debug("refreshTree!");
-//		this.refreshTree();
 		
 		logger.debug("createFilterPopupContent!");
 		createFilterPopupContent();
@@ -1171,174 +953,71 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			logger.debug("authentication has topology authority " + authentication.hasGrantedAuthority(SecurityConstants.VIEW_TOPOLOGY_AUTHORITY));
 		}
 		
-		if(authentication != null 
-    			&& (authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY) ||
-    					authentication.hasGrantedAuthority(SecurityConstants.VIEW_TOPOLOGY_AUTHORITY)))
-    	{
-			List<Server> servers = this.topologyService.getAllServers();
-			
-			logger.debug("Trying to load tree for " + servers.size());
-			
-			for(Server server: servers)
-			{	
-				Set<ServerModule> modules = server.getServerModules();
-	
-				this.moduleTree.addItem(server);
-				this.moduleTree.setCaptionAsHtml(true);
-				
-				MonitorIcons icon = MonitorIcons.SERVER;
-	        	icon.setSizePixels(14);
-	        	icon.setColor("green");
-	        	
-	            this.moduleTree.setItemCaption(server, icon.getHtml() + " " + server.getName());
-	            this.moduleTree.setChildrenAllowed(server, true);
-	        	
-	
-		        for(ServerModule module: modules)
-		        {	        	
-		            this.moduleTree.addItem(module);
-		            this.moduleTree.setItemCaption(module, module.getModule().getName());
-		            this.moduleTree.setParent(module, server);
-		            this.moduleTree.setChildrenAllowed(module, true);
-		            this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
-		            
-		            Set<Flow> flows = module.getModule().getFlows();
+		List<Server> servers = TopologyViewPanel.this.topologyService.getAllServers();
 		
-		            for(Flow flow: flows)
-		            {
-		                this.moduleTree.addItem(flow);
-		                this.moduleTree.setItemCaption(flow, flow.getName());
-	                    this.moduleTree.setParent(flow, module);
-		                this.moduleTree.setChildrenAllowed(flow, true);
-		    			
-		                TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-		                
-		                Set<Component> components = flow.getComponents();
-		                
-		                for(Component component: components)
-		                {
-		                	this.moduleTree.addItem(component);
-		                	this.moduleTree.setParent(component, flow);
-		                	this.moduleTree.setItemCaption(component, component.getName());
-		                	this.moduleTree.setChildrenAllowed(component, false);
-		                	
-		                	if(component.isConfigurable())
-    	                	{
-    	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG);
-    	                	}
-    	                	else
-    	                	{
-    	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG_O);
-    	                	}
-		                }
-		            }
-		        }
-			}
-			
-			List<BusinessStream> businessStreams = this.topologyService.getAllBusinessStreams();
-			
-			if(this.businessStreamCombo != null)
-			{
-				this.businessStreamCombo.removeAllItems();
-				
-				for(BusinessStream businessStream: businessStreams)
-				{
-					this.businessStreamCombo.addItem(businessStream);
-					this.businessStreamCombo.setItemCaption(businessStream, businessStream.getName());
-				}
-			}
-			
-			this.treeViewBusinessStreamCombo.removeAllItems();
-			
-			BusinessStream businessStreamAll = new BusinessStream();
-			businessStreamAll.setName("All");
-			
-			this.treeViewBusinessStreamCombo.addItem(businessStreamAll);
-			this.treeViewBusinessStreamCombo.setItemCaption(businessStreamAll, businessStreamAll.getName());
-			
-			for(BusinessStream businessStream: businessStreams)
-			{
-				this.treeViewBusinessStreamCombo.addItem(businessStream);
-				this.treeViewBusinessStreamCombo.setItemCaption(businessStream, businessStream.getName());
-			}
-			
-			this.treeViewBusinessStreamCombo.setValue(businessStreamAll);
-    	}
-		else
+		for(Server server: servers)
 		{
-			List<BusinessStream> businessStreams = this.topologyService.getAllBusinessStreams();
+			Set<ServerModule> modules = server.getServerModules();
 			
-			if(this.businessStreamCombo != null)
-			{
-				this.businessStreamCombo.removeAllItems();
-			}
-			
-			this.treeViewBusinessStreamCombo.removeAllItems();
-			
-			BusinessStream businessStreamAll = new BusinessStream();
-			businessStreamAll.setName("All");
-			
-			this.treeViewBusinessStreamCombo.addItem(businessStreamAll);
-			this.treeViewBusinessStreamCombo.setItemCaption(businessStreamAll, businessStreamAll.getName());			
-			this.treeViewBusinessStreamCombo.setValue(businessStreamAll);
-			
-			for(BusinessStream businessStream: businessStreams)
-			{
-				if(authentication.canAccessLinkedItem(PolicyLinkTypeConstants.BUSINESS_STREAM_LINK_TYPE, businessStream.getId()))
-				{
-					for(BusinessStreamFlow bsFlow: businessStream.getFlows())
-		        	{
-		        		Server server = bsFlow.getFlow().getModule().getServerOnWhichActive();
-		        		Module module = bsFlow.getFlow().getModule();
-		        		Flow flow = bsFlow.getFlow();
-		        		
-		        		if(!moduleTree.containsId(server))
-		        		{
-		            		moduleTree.addItem(server);
-		                    moduleTree.setItemCaption(server, server.getName());
-		                    moduleTree.setChildrenAllowed(server, true);
-		                    		        		}
-		                
-		                moduleTree.addItem(module);
-		                moduleTree.setItemCaption(module, module.getName());
-		                moduleTree.setParent(module, server);
-		                moduleTree.setChildrenAllowed(module, true);
-		                moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
-		                
-		                moduleTree.addItem(flow);
-		                moduleTree.setItemCaption(flow, flow.getName());
-		                moduleTree.setParent(flow, module);
-		                moduleTree.setChildrenAllowed(flow, true);
+			TopologyViewPanel.this.moduleTree.addItem(server);
+			TopologyViewPanel.this.moduleTree.setItemCaption(server, server.getName());
+			TopologyViewPanel.this.moduleTree.setChildrenAllowed(server, true);
+			TopologyViewPanel.this.moduleTree.setItemIcon(server, VaadinIcons.SERVER);
 
-		                TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-		                
-		                Set<Component> components = flow.getComponents();
-		
-		                for(Component component: components)
-		                {
-		                	moduleTree.addItem(component);
-		                	moduleTree.setParent(component, flow);
-		                	moduleTree.setItemCaption(component, component.getName());
-		                	moduleTree.setChildrenAllowed(component, false);
-		                	
-		                	if(component.isConfigurable())
-    	                	{
-    	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG);
-    	                	}
-    	                	else
-    	                	{
-    	                		TopologyViewPanel.this.moduleTree.setItemIcon(component, VaadinIcons.COG_O);
-    	                	}
-		                }
-		                
-		                this.businessStreamCombo.addItem(businessStream);
-		    			this.businessStreamCombo.setItemCaption(businessStream, businessStream.getName());
-		    			
-		    			this.treeViewBusinessStreamCombo.addItem(businessStream);
-		    			this.treeViewBusinessStreamCombo.setItemCaption(businessStream, businessStream.getName());
-		        	}
-	        	}
-        	}		
+	        for(ServerModule module: modules)
+	        {
+	        	TopologyViewPanel.this.moduleTree.addItem(module);
+	        	TopologyViewPanel.this.moduleTree.setItemCaption(module, module.getModule().getName());
+	        	TopologyViewPanel.this.moduleTree.setParent(module, server);
+	        	TopologyViewPanel.this.moduleTree.setChildrenAllowed(module, true);
+	        	TopologyViewPanel.this.moduleTree.setItemIcon(module, VaadinIcons.ARCHIVE);
+	            
+	            Set<Flow> flows = module.getModule().getFlows();
+	
+	            for(Flow flow: flows)
+	            {
+	            	String flowItemId = "flow_" + flow.getId() + System.currentTimeMillis();
+	            	
+	            	this.flowMap.put(flowItemId, flow);
+	            	
+	            	TopologyViewPanel.this.moduleTree.addItem(flowItemId);
+	            	TopologyViewPanel.this.moduleTree.setItemCaption(flowItemId, flow.getName());
+	            	TopologyViewPanel.this.moduleTree.setParent(flowItemId, module);
+	            	TopologyViewPanel.this.moduleTree.setChildrenAllowed(flowItemId, true);
+	                            	            	                	            	                	            	
+	            	if(flow.isConfigurable())
+                	{
+	            		TopologyViewPanel.this.moduleTree.setItemIcon(flowItemId, VaadinIcons.ELLIPSIS_CIRCLE);
+                	}
+                	else
+                	{
+                		TopologyViewPanel.this.moduleTree.setItemIcon(flowItemId, VaadinIcons.ELLIPSIS_CIRCLE_O);
+                	}
+	                
+	                Set<Component> components = flow.getComponents();
+	
+	                for(Component component: components)
+	                {
+	                	String itemId = "component_" + component.getId() + System.currentTimeMillis();
+	                	
+	                	this.componentMap.put(itemId, component);
+	                	
+	                	TopologyViewPanel.this.moduleTree.addItem(itemId);
+	                	TopologyViewPanel.this.moduleTree.setParent(itemId, flowItemId);
+	                	TopologyViewPanel.this.moduleTree.setItemCaption(itemId, component.getName());
+	                	TopologyViewPanel.this.moduleTree.setChildrenAllowed(itemId, false);
+	                	
+	                	if(component.isConfigurable())
+	                	{
+	                		TopologyViewPanel.this.moduleTree.setItemIcon(itemId, VaadinIcons.COG);
+	                	}
+	                	else
+	                	{
+	                		TopologyViewPanel.this.moduleTree.setItemIcon(itemId, VaadinIcons.COG_O);
+	                	}
+	                }
+	            }
+	        }
 		}
 	
 		for (Iterator<?> it = this.moduleTree.rootItemIds().iterator(); it.hasNext();) 
@@ -1349,7 +1028,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		for (Iterator<?> it = this.moduleTree.getItemIds().iterator(); it.hasNext();) 
 		{
 			Object nextItem = it.next();
-			if(nextItem instanceof Module)
+			if(nextItem instanceof ServerModule)
 			{
 				this.moduleTree.collapseItemsRecursively(nextItem);
 			}
@@ -1428,81 +1107,94 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
         {
             return moduleActions;
         }
-		else if(target instanceof Flow)
-        {
-			if(authentication != null 
-	    			&& (!authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)))
-			{
-				return this.flowActions;
-			}
-
-			Flow flow = ((Flow)target);
-			
-			String state = this.topologyCache.getState(flow.getModule().getName() + "-" + flow.getName());
-			if(state != null && (state.equals(RUNNING) || state.equals(RECOVERING)))
-			{
-				if(flow.isConfigurable())
-				{
-					return this.flowActionsStartedConfigurable;
-				}
-				else
-				{
-					return this.flowActionsStarted;
-				}
-			}
-			else if (state != null &&(state.equals(STOPPED) || state.equals(STOPPED_IN_ERROR)))
-			{
-				if(flow.isConfigurable())
-				{
-					return this.flowActionsStoppedConfigurable;
-				}
-				else
-				{
-					return this.flowActionsStopped;
-				}
-			}
-			else if (state != null && state.equals(PAUSED))
-			{
-				if(flow.isConfigurable())
-				{
-					return this.flowActionsPausedConfigurable;
-				}
-				else
-				{
-					return this.flowActionsPaused;
-				}
-			}
-			else
-			{
-				if(flow.isConfigurable())
-				{
-					return this.flowActionsConfigurable;
-				}
-				else
+		else if(target instanceof String)
+		{
+			String itemId = (String)target;
+			if(itemId.startsWith("flow_"))
+	        {
+				if(authentication != null 
+		    			&& (!authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)))
 				{
 					return this.flowActions;
 				}
-			}
-        }
-		else if(target instanceof Component)
-        {
-			if(authentication != null 
-	    			&& (!authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)))
-			{
-				return this.componentActions;
-			}
 	
-			if(((Component)target).isConfigurable())
-			{
-				return componentActionsConfigurable;
-			}
-			else
-			{
-				return componentActions;
-			}
-        }
+				Flow flow = this.flowMap.get(itemId);
+				
+				if(flow != null)
+				{
+				
+					String state = this.topologyCache.getState(flow.getModule().getName() + "-" + flow.getName());
+					if(state != null && (state.equals(RUNNING) || state.equals(RECOVERING)))
+					{
+						if(flow.isConfigurable())
+						{
+							return this.flowActionsStartedConfigurable;
+						}
+						else
+						{
+							return this.flowActionsStarted;
+						}
+					}
+					else if (state != null &&(state.equals(STOPPED) || state.equals(STOPPED_IN_ERROR)))
+					{
+						if(flow.isConfigurable())
+						{
+							return this.flowActionsStoppedConfigurable;
+						}
+						else
+						{
+							return this.flowActionsStopped;
+						}
+					}
+					else if (state != null && state.equals(PAUSED))
+					{
+						if(flow.isConfigurable())
+						{
+							return this.flowActionsPausedConfigurable;
+						}
+						else
+						{
+							return this.flowActionsPaused;
+						}
+					}
+					else
+					{
+						if(flow.isConfigurable())
+						{
+							return this.flowActionsConfigurable;
+						}
+						else
+						{
+							return this.flowActions;
+						}
+					}
+				}
+	        }
+			else if(itemId.startsWith("component_"))
+	        {
+				if(authentication != null 
+		    			&& (!authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)))
+				{
+					return this.componentActions;
+				}
+		
+				Component component= this.componentMap.get(itemId);
+				
+				if(component != null)
+				{
+					if(component.isConfigurable())
+					{
+						return componentActionsConfigurable;
+					}
+					else
+					{
+						return componentActions;
+					}
+				}
+	        }
+		}
         
-           return actionsEmpty;
+        return actionsEmpty;
 
 	}
 
@@ -1527,81 +1219,85 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			return;
 		}
 		
-        if(target != null && target instanceof Component)
-        {
-        	if(action.equals(CONFIGURE))
-        	{
-        		this.componentConfigurationWindow.populate(((Component)target));
-        		UI.getCurrent().addWindow(this.componentConfigurationWindow);
-        	}
-        	else if(action.equals(WIRETAP))
-        	{
-        		UI.getCurrent().addWindow(new WiretapConfigurationWindow((Component)target
-        			, triggerManagementService));
-        	}
-        	else if(action.equals(ERROR_CATEGORISATION))
-        	{
-        		Component component = (Component)target;
-        		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServerOnWhichActive(),
-        				component.getFlow().getModule(), component.getFlow(), component, errorCategorisationService));
-        	}
-        }
-        else if(target != null && target instanceof Flow)
-        {
-        	Flow flow = ((Flow)target);
+        if(target instanceof String)
+		{
+			String itemId = (String)target;
         	
-        	if(action.equals(CONFIGURE))
-        	{
-        		this.flowConfigurationWindow.populate(flow);
-        		UI.getCurrent().addWindow(this.flowConfigurationWindow);
-        	}
-        	else if(action.equals(START))
+        	if(itemId.startsWith("flow_"))
 	        {
-	     		if(this.actionFlow(flow, "start"))
-	     		{
-	     			TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-	     		}
-	        }
-	        else if(action.equals(STOP))
-	        {
-	        	if(this.actionFlow(flow, "stop"))
-	        	{
-	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-	        	}
-	        }
-	        else if(action.equals(PAUSE))
-	        {
-	        	if(this.actionFlow(flow, "pause"))
-	        	{
-	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-	        	}
-	        }
-	        else if(action.equals(RESUME))
-	        {
-	        	if(this.actionFlow(flow, "resume"))
-	        	{
-	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-	        	}
-	        }
-	        else if(action.equals(START_PAUSE))
-	        {       	
-	        	if(this.actionFlow(flow, "startPause"))
-	        	{
-	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
-	        	}
-	        }
-	        else if(action.equals(STARTUP_CONTROL))
-	        {       	
-	        	UI.getCurrent().addWindow(new StartupControlConfigurationWindow(this.startupControlService, flow));
-	        }
-	        else if(action.equals(ERROR_CATEGORISATION))
-        	{
+        		Flow flow = this.flowMap.get(itemId);
         		
-        		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServerOnWhichActive(),
-        				flow.getModule(), flow, null, errorCategorisationService));
-        	}
-	        
+        		if(action.equals(CONFIGURE))
+            	{
+            		this.flowConfigurationWindow.populate(flow);
+            		UI.getCurrent().addWindow(this.flowConfigurationWindow);
+            	}
+            	else if(action.equals(START))
+    	        {
+    	     		if(this.actionFlow(flow, "start"))
+    	     		{
+    	     			TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
+    	     		}
+    	        }
+    	        else if(action.equals(STOP))
+    	        {
+    	        	if(this.actionFlow(flow, "stop"))
+    	        	{
+    	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
+    	        	}
+    	        }
+    	        else if(action.equals(PAUSE))
+    	        {
+    	        	if(this.actionFlow(flow, "pause"))
+    	        	{
+    	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
+    	        	}
+    	        }
+    	        else if(action.equals(RESUME))
+    	        {
+    	        	if(this.actionFlow(flow, "resume"))
+    	        	{
+    	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
+    	        	}
+    	        }
+    	        else if(action.equals(START_PAUSE))
+    	        {       	
+    	        	if(this.actionFlow(flow, "startPause"))
+    	        	{
+    	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
+    	        	}
+    	        }
+    	        else if(action.equals(STARTUP_CONTROL))
+    	        {       	
+    	        	UI.getCurrent().addWindow(new StartupControlConfigurationWindow(this.startupControlService, flow));
+    	        }
+    	        else if(action.equals(ERROR_CATEGORISATION))
+            	{
+            		
+            		UI.getCurrent().addWindow(new ErrorCategorisationWindow(flow.getModule().getServerOnWhichActive(),
+            				flow.getModule(), flow, null, errorCategorisationService));
+            	}
+	        }	
+        	else if(itemId.startsWith("component_"))
+	        {
+        		Component component = this.componentMap.get(itemId);
+        		
+        		if(action.equals(CONFIGURE))
+            	{
+            		this.componentConfigurationWindow.populate(component);
+            		UI.getCurrent().addWindow(this.componentConfigurationWindow);
+            	}
+            	else if(action.equals(WIRETAP))
+            	{
+            		UI.getCurrent().addWindow(new WiretapConfigurationWindow(component
+            			, triggerManagementService));
+            	}
+            	else if(action.equals(ERROR_CATEGORISATION))
+            	{            		
+            		UI.getCurrent().addWindow(new ErrorCategorisationWindow(component.getFlow().getModule().getServerOnWhichActive(),
+            				component.getFlow().getModule(), component.getFlow(), component, errorCategorisationService));
+            	}
+	        }	        
         }
         else if(target != null && target instanceof Module)
         {

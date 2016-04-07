@@ -345,7 +345,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		if(serverId != null && moduleId != null)
 		{
 			criteria.createCriteria("module").add(Restrictions.eq("id", moduleId))
-				.createCriteria("server").add(Restrictions.eq("id", serverId));
+				.createCriteria("serverModules").add(Restrictions.eq("id.serverId", serverId));
 		}
 		else if(moduleId != null)
 		{
@@ -353,8 +353,8 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		}
 		else if(serverId != null)
 		{
-			criteria.createCriteria("module").createCriteria("server"
-					).add(Restrictions.eq("id", serverId));
+			criteria.createCriteria("module").createCriteria("serverModules")
+				.add(Restrictions.eq("id.serverId", serverId));
 		}
 			
 		if(flowName != null)
@@ -377,7 +377,7 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		
 		criteria.createCriteria("flow").add(Restrictions.eq("name", flowName))
 			.createCriteria("module").add(Restrictions.eq("id", moduleId))
-				.createCriteria("servers").add(Restrictions.eq("id", serverId));
+				.createCriteria("serverModules").add(Restrictions.eq("id.serverId", serverId));
 
 		criteria.add(Restrictions.not(Restrictions.in("name", componentNames)));
 
@@ -594,5 +594,27 @@ public class HibernateTopologyDao extends HibernateDaoSupport implements Topolog
 		DetachedCriteria criteria = DetachedCriteria.forClass(Notification.class);
 
         return (List<Notification>)this.getHibernateTemplate().findByCriteria(criteria);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.topology.dao.TopologyDao#getServerModule(java.lang.Long, java.lang.Long)
+	 */
+	@Override
+	public ServerModule getServerModule(Long serverId, Long moduleId) 
+	{
+		DetachedCriteria criteria = DetachedCriteria.forClass(ServerModule.class);
+		criteria.add(Restrictions.eq("id.serverId", serverId));
+		criteria.add(Restrictions.eq("id.moduleId", moduleId));
+
+        return (ServerModule)DataAccessUtils.uniqueResult(this.getHibernateTemplate().findByCriteria(criteria));
+	}
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.topology.dao.TopologyDao#deleteServerModule(org.ikasan.topology.model.ServerModule)
+	 */
+	@Override
+	public void deleteServerModule(ServerModule serverModule) 
+	{
+		this.getHibernateTemplate().delete(serverModule);
 	}
 }

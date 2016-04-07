@@ -57,8 +57,8 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.ikasan.dashboard.ui.Broadcaster;
 import org.ikasan.spec.configuration.PlatformConfigurationService;
-import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
 
 /**
@@ -149,18 +149,18 @@ public class TopologyStateCache
 		logger.debug("Number of servers to synch: " + servers.size());
 		for(Server server: servers)
 		{
-//			logger.debug("Synchronising server: " + server.getName());
-//			for(Module module: server.getModules())
-//			{
-//				logger.debug("Synchronising module: " + module.getName());
-//				
-//				HashMap<String, String> results = getFlowStates(module, username, password);
-//				
-//				for(String key: results.keySet())
-//				{
-//					stateMap.put(key, results.get(key));
-//				}
-//			}
+			logger.debug("Synchronising server: " + server.getName());
+			for(ServerModule module: server.getServerModules())
+			{
+				logger.debug("Synchronising module: " + module.getModule().getName());
+				
+				HashMap<String, String> results = getFlowStates(module, username, password);
+				
+				for(String key: results.keySet())
+				{
+					stateMap.put(module.getServer().getName() + "-" + key, results.get(key));
+				}
+			}
 		}
 		
 		Broadcaster.broadcast(stateMap);
@@ -176,7 +176,7 @@ public class TopologyStateCache
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected HashMap<String, String> getFlowStates(Module module, String username,
+	protected HashMap<String, String> getFlowStates(ServerModule module, String username,
 			String password)
 	{
 		HashMap<String, String> results = new HashMap<String, String>();
@@ -184,24 +184,24 @@ public class TopologyStateCache
 		
 		try
 		{
-//			url = module.getServer().getUrl() + ":" + module.getServer().getPort() 
-//					+ module.getContextRoot() 
-//					+ "/rest/moduleControl/flowStates/"
-//					+ module.getName();
-//			
-//	    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(username, password);
-//	    	
-//	    	ClientConfig clientConfig = new ClientConfig();
-//	    	clientConfig.register(feature) ;
-//	    	
-//	    	Client client = ClientBuilder.newClient(clientConfig);
-//	    	
-//	    	logger.debug("Calling URL: " + url);
-//	    	WebTarget webTarget = client.target(url);
-//		    
-//	    	results = (HashMap<String, String>)webTarget.request().get(HashMap.class);
-//	    	
-//	    	logger.debug("results: " + results);
+			url = module.getServer().getUrl() + ":" + module.getServer().getPort() 
+					+ module.getModule().getContextRoot() 
+					+ "/rest/moduleControl/flowStates/"
+					+ module.getModule().getName();
+			
+	    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(username, password);
+	    	
+	    	ClientConfig clientConfig = new ClientConfig();
+	    	clientConfig.register(feature) ;
+	    	
+	    	Client client = ClientBuilder.newClient(clientConfig);
+	    	
+	    	logger.debug("Calling URL: " + url);
+	    	WebTarget webTarget = client.target(url);
+		    
+	    	results = (HashMap<String, String>)webTarget.request().get(HashMap.class);
+	    	
+	    	logger.debug("results: " + results);
 		}
 		catch(Exception e)
 		{
