@@ -580,12 +580,14 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 					if(((String)itemId).startsWith("flow_"))
 					{
 						Flow flow = flowMap.get(itemId);
+										
+						Server server = (Server)moduleTree.getParent(moduleTree.getParent(itemId));
 						
-						for(ServerModule serverModule: flow.getModule().getServerModules())
+						if(server != null)
 						{
-							String state = flowStates.get(serverModule.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+							String state = flowStates.get(server.getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
 			            	
-							logger.info(serverModule.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+							logger.info(server.getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
 							
 			    			if(state != null && state.equals(RUNNING))
 			    			{
@@ -607,7 +609,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			    			{
 			    				return "indigoicon";
 			    			}
-						}
+						}						
 					}
 				}				
 				
@@ -1035,7 +1037,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		}
 	}
 
-	protected boolean actionFlow(Flow flow, String action)
+	protected boolean actionFlow(Server server, Flow flow, String action)
 	{		
 		IkasanAuthentication authentication = (IkasanAuthentication)VaadinService.getCurrentRequest().getWrappedSession()
 	        	.getAttribute(DashboardSessionValueConstants.USER);
@@ -1047,7 +1049,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     	
     	Client client = ClientBuilder.newClient(clientConfig);
 		
-    	String url = flow.getModule().getServerOnWhichActive().getUrl() + ":" + flow.getModule().getServerOnWhichActive().getPort()
+    	String url = server.getUrl() + ":" + server.getPort()
 				+ flow.getModule().getContextRoot() 
 				+ "/rest/moduleControl/controlFlowState/"
 				+ flow.getModule().getName() 
@@ -1122,8 +1124,9 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 				
 				if(flow != null)
 				{
+					Server server = (Server)this.moduleTree.getParent(this.moduleTree.getParent(itemId));
 				
-					String state = this.topologyCache.getState(flow.getModule().getName() + "-" + flow.getName());
+					String state = this.topologyCache.getState(server.getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
 					if(state != null && (state.equals(RUNNING) || state.equals(RECOVERING)))
 					{
 						if(flow.isConfigurable())
@@ -1227,6 +1230,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	        {
         		Flow flow = this.flowMap.get(itemId);
         		
+        		Server server = (Server)this.moduleTree.getParent(this.moduleTree.getParent(itemId));
+        		
         		if(action.equals(CONFIGURE))
             	{
             		this.flowConfigurationWindow.populate(flow);
@@ -1234,35 +1239,35 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
             	}
             	else if(action.equals(START))
     	        {
-    	     		if(this.actionFlow(flow, "start"))
+    	     		if(this.actionFlow(server, flow, "start"))
     	     		{
     	     			TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
     	     		}
     	        }
     	        else if(action.equals(STOP))
     	        {
-    	        	if(this.actionFlow(flow, "stop"))
+    	        	if(this.actionFlow(server, flow, "stop"))
     	        	{
     	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
     	        	}
     	        }
     	        else if(action.equals(PAUSE))
     	        {
-    	        	if(this.actionFlow(flow, "pause"))
+    	        	if(this.actionFlow(server, flow, "pause"))
     	        	{
     	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
     	        	}
     	        }
     	        else if(action.equals(RESUME))
     	        {
-    	        	if(this.actionFlow(flow, "resume"))
+    	        	if(this.actionFlow(server, flow, "resume"))
     	        	{
     	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
     	        	}
     	        }
     	        else if(action.equals(START_PAUSE))
     	        {       	
-    	        	if(this.actionFlow(flow, "startPause"))
+    	        	if(this.actionFlow(server, flow, "startPause"))
     	        	{
     	        		TopologyViewPanel.this.moduleTree.setItemIcon(flow, VaadinIcons.AUTOMATION);
     	        	}

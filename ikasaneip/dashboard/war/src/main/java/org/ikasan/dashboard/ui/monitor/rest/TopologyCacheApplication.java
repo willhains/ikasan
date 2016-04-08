@@ -80,7 +80,7 @@ public class TopologyCacheApplication
         
         String key = moduleName + "-" + flowName;
         
-        this.topologyStateCache.update(key, state);
+        this.topologyStateCache.update(moduleName, flowName, state);
 
         return Response.ok("State cache successfully updated!").build();
     }

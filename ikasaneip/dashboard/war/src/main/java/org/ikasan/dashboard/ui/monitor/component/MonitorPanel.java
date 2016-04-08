@@ -40,29 +40,18 @@
  */
 package org.ikasan.dashboard.ui.monitor.component;
 
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.log4j.Logger;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.ikasan.dashboard.ui.IkasanUI;
 import org.ikasan.dashboard.ui.framework.cache.TopologyStateCache;
 import org.ikasan.dashboard.ui.framework.event.FlowStateEvent;
 import org.ikasan.dashboard.ui.framework.util.DashboardSessionValueConstants;
-import org.ikasan.security.service.authentication.IkasanAuthentication;
 import org.ikasan.spec.module.StartupControl;
 import org.ikasan.spec.module.StartupControlService;
 import org.ikasan.topology.model.Flow;
-import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
+import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
 import org.tepi.filtertable.FilterTable;
 import org.vaadin.teemu.VaadinIcons;
@@ -76,7 +65,6 @@ import com.vaadin.event.Action;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FontAwesome;
-import com.vaadin.server.VaadinService;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
@@ -89,7 +77,6 @@ import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.MenuBar.Command;
 import com.vaadin.ui.MenuBar.MenuItem;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.themes.ValoTheme;
@@ -205,72 +192,72 @@ public class MonitorPanel extends Panel implements View, Action.Handler
     	icon.setColor("green");
 
     	
-//		for(String key: stateMap.keySet())
-//		{
-//			for(Module module: server.getModules())
-//			{
-//				if(key.startsWith(module.getName()))
-//				{
-//					String state = this.stateMap.get(key);
-//					
-//					if(state.equals(RECOVERING) || state.equals(STOPPED_IN_ERROR))
-//					{
-//						icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
-//						icon.setSizePixels(64);
-//				    	icon.setColor("red");
-//				    	
-//				    	statusLabel.setCaption(icon.getHtml());
-//				    	
-//				    	return;
-//					}
-//					
-//					if(state.equals(STOPPED))
-//					{
-//						for(Flow flow: module.getFlows())
-//						{
-//							if(key.contains(flow.getName()))
-//							{
-//								StartupControl startupControl = this.startupControlService.getStartupControl(module.getName()
-//									, flow.getName());
-//								
-//								if(!startupControl.isDisabled())
-//								{
-//									icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
-//									icon.setSizePixels(64);
-//							    	icon.setColor("red");
-//							    	
-//							    	statusLabel.setCaption(icon.getHtml());
-//							    	
-//							    	return;
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-//		
-//		for(String key: stateMap.keySet())
-//		{
-//			for(Module module: server.getModules())
-//			{
-//				if(key.startsWith(module.getName()))
-//				{
-//					String state = this.stateMap.get(key);
-//					
-//					if(state.equals(PAUSED))
-//					{
-//						icon = MonitorIcons.PAUSE;
-//						icon.setSizePixels(64);
-//				    	icon.setColor("purple");
-//				    	
-//				    	statusLabel.setCaption(icon.getHtml());
-//				    	
-//				    	return;
-//					}
-//				}
-//			}
-//		}
+		for(String key: stateMap.keySet())
+		{
+			for(ServerModule module: server.getServerModules())
+			{
+				if(key.contains(module.getModule().getName()))
+				{
+					String state = this.stateMap.get(key);
+					
+					if(state.equals(RECOVERING) || state.equals(STOPPED_IN_ERROR))
+					{
+						icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
+						icon.setSizePixels(64);
+				    	icon.setColor("red");
+				    	
+				    	statusLabel.setCaption(icon.getHtml());
+				    	
+				    	return;
+					}
+					
+					if(state.equals(STOPPED))
+					{
+						for(Flow flow: module.getModule().getFlows())
+						{
+							if(key.contains(flow.getName()))
+							{
+								StartupControl startupControl = this.startupControlService.getStartupControl(module.getModule().getName()
+									, flow.getName());
+								
+								if(!startupControl.isDisabled())
+								{
+									icon = MonitorIcons.EXCLAMATION_CIRCLE_O;
+									icon.setSizePixels(64);
+							    	icon.setColor("red");
+							    	
+							    	statusLabel.setCaption(icon.getHtml());
+							    	
+							    	return;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		for(String key: stateMap.keySet())
+		{
+			for(ServerModule module: server.getServerModules())
+			{
+				if(key.contains(module.getModule().getName()))
+				{
+					String state = this.stateMap.get(key);
+					
+					if(state.equals(PAUSED))
+					{
+						icon = MonitorIcons.PAUSE;
+						icon.setSizePixels(64);
+				    	icon.setColor("purple");
+				    	
+				    	statusLabel.setCaption(icon.getHtml());
+				    	
+				    	return;
+					}
+				}
+			}
+		}
 		
 		statusLabel.setCaption(icon.getHtml());
 	}
@@ -381,11 +368,36 @@ public class MonitorPanel extends Panel implements View, Action.Handler
 				
 				Flow flow = (Flow)itemId;
 				
-				String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
-				
-				if (propertyId == null) 
+				for(ServerModule moduleServer: flow.getModule().getServerModules())
 				{
-			
+				
+					String state = stateMap.get(moduleServer.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+					
+					if (propertyId == null) 
+					{
+				
+						if(state != null && state.equals(RUNNING))
+		    			{
+							return "ikasan-green-small";
+		    			}
+		    			else if(state != null && state.equals(RECOVERING))
+		    			{
+		    				return "ikasan-orange-small";
+		    			}
+		    			else if (state != null && state.equals(STOPPED))
+		    			{
+		    				return "ikasan-red-small";
+		    			}
+		    			else if (state != null && state.equals(STOPPED_IN_ERROR))
+		    			{
+		    				return "ikasan-red-small";
+		    			}
+		    			else if (state != null && state.equals(PAUSED))
+		    			{
+		    				return "ikasan-indigo-small";
+		    			}
+					}
+					
 					if(state != null && state.equals(RUNNING))
 	    			{
 						return "ikasan-green-small";
@@ -406,28 +418,9 @@ public class MonitorPanel extends Panel implements View, Action.Handler
 	    			{
 	    				return "ikasan-indigo-small";
 	    			}
+					
+					return "ikasan-small";
 				}
-				
-				if(state != null && state.equals(RUNNING))
-    			{
-					return "ikasan-green-small";
-    			}
-    			else if(state != null && state.equals(RECOVERING))
-    			{
-    				return "ikasan-orange-small";
-    			}
-    			else if (state != null && state.equals(STOPPED))
-    			{
-    				return "ikasan-red-small";
-    			}
-    			else if (state != null && state.equals(STOPPED_IN_ERROR))
-    			{
-    				return "ikasan-red-small";
-    			}
-    			else if (state != null && state.equals(PAUSED))
-    			{
-    				return "ikasan-indigo-small";
-    			}
 				
 				return "ikasan-small";
 			}
@@ -442,7 +435,6 @@ public class MonitorPanel extends Panel implements View, Action.Handler
         cont.addContainerProperty("Module Name", String.class, null);
         cont.addContainerProperty("Flow Name", String.class, null);
         cont.addContainerProperty("Flow State", String.class, null);
-//        cont.addContainerProperty("Startup Control", String.class, null);
 
         return cont;
     }
@@ -464,39 +456,36 @@ public class MonitorPanel extends Panel implements View, Action.Handler
 	
 	public void populate(ConcurrentHashMap<String, String> stateMap)
 	{		
-//		for(Module module: server.getModules())
-//		{
-//			for(Flow flow: module.getFlows())
-//			{
-//				String state = stateMap.get(flow.getModule().getName() + "-" + flow.getName());
-//				
-//				if(state == null)
-//				{
-//					state = "unknown";
-//				}
-//				
-//				Item item = this.cont.getItem(flow);
-//							
-//				if(item != null && !item.getItemProperty("Flow State").getValue().equals(state))
-//				{
-//					item.getItemProperty("Flow State").setValue(state);
-//				}
-//				else
-//				{
-//					item = this.cont.addItem(flow);
-//					
-//					if(item != null && flow != null)
-//					{
-//						item.getItemProperty("Module Name").setValue(flow.getModule().getName());
-//						item.getItemProperty("Flow Name").setValue(flow.getName());
-//						item.getItemProperty("Flow State").setValue(state);
-////						StartupControl startupControl = this.startupControlService.getStartupControl(flow.getModule().getName()
-////								, flow.getName());
-////						item.getItemProperty("Startup Control").setValue(startupControl.getStartupType().name());
-//					}
-//				}
-//			}
-//		}
+		for(ServerModule module: server.getServerModules())
+		{
+			for(Flow flow: module.getModule().getFlows())
+			{
+				String state = stateMap.get(module.getServer().getName() + "-" + flow.getModule().getName() + "-" + flow.getName());
+				
+				if(state == null)
+				{
+					state = "unknown";
+				}
+				
+				Item item = this.cont.getItem(flow);
+							
+				if(item != null && !item.getItemProperty("Flow State").getValue().equals(state))
+				{
+					item.getItemProperty("Flow State").setValue(state);
+				}
+				else
+				{
+					item = this.cont.addItem(flow);
+					
+					if(item != null && flow != null)
+					{
+						item.getItemProperty("Module Name").setValue(flow.getModule().getName());
+						item.getItemProperty("Flow Name").setValue(flow.getName());
+						item.getItemProperty("Flow State").setValue(state);
+					}
+				}
+			}
+		}
 	}	
 	
 	@Subscribe

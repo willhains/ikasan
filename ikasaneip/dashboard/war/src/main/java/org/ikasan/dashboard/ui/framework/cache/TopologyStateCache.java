@@ -57,6 +57,7 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.ikasan.dashboard.ui.Broadcaster;
 import org.ikasan.spec.configuration.PlatformConfigurationService;
+import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
 import org.ikasan.topology.model.ServerModule;
 import org.ikasan.topology.service.TopologyService;
@@ -168,11 +169,23 @@ public class TopologyStateCache
 		logger.debug("Finished synchronising topology state cache.");
 	}
 	
-	public void update(String key, String value)
+	public void update(String moduleName, String flowName, String value)
 	{
-		stateMap.put(key, value);
+		Module module = this.topologyService.getModuleByName(moduleName);
 		
-		Broadcaster.broadcast(stateMap);
+		if(module != null)
+		{
+			String username = this.platformConfigurationService.getWebServiceUsername();
+			String password = this.platformConfigurationService.getWebServicePassword();
+			
+			for(ServerModule serverModule: module.getServerModules())
+			{
+				value = this.getFlowState(serverModule, flowName, username, password);
+				stateMap.put(serverModule.getServer().getName() + "-" + moduleName + "-" + flowName, value);
+			}
+			
+			Broadcaster.broadcast(stateMap);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -205,10 +218,51 @@ public class TopologyStateCache
 		}
 		catch(Exception e)
 		{
-			logger.debug("Caught exception attempting to discover module with the following URL: " + url 
-	    			+ ". Ignoring and moving on to next module. Exception message: " + e.getMessage());
+			logger.warn("Caught exception attempting to get flow states with the following URL: " + url 
+	    			+ e.getMessage());
 			
 			return new HashMap<String, String>();
+		}
+	    
+	    return results;
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected String getFlowState(ServerModule module, String flowName, String username,
+			String password)
+	{
+		String results = null;
+		String url = null;
+		
+		try
+		{
+			url = module.getServer().getUrl() + ":" + module.getServer().getPort() 
+					+ module.getModule().getContextRoot() 
+					+ "/rest/moduleControl/flowState/"
+					+ module.getModule().getName()
+					+ "/"
+					+ flowName;
+			
+	    	HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic(username, password);
+	    	
+	    	ClientConfig clientConfig = new ClientConfig();
+	    	clientConfig.register(feature) ;
+	    	
+	    	Client client = ClientBuilder.newClient(clientConfig);
+	    	
+	    	logger.debug("Calling URL: " + url);
+	    	WebTarget webTarget = client.target(url);
+		    
+	    	results = (String)webTarget.request().get(String.class);
+	    	
+	    	logger.debug("results: " + results);
+		}
+		catch(Exception e)
+		{
+			logger.warn("Caught exception attempting to get flow state with the following URL: " + url 
+	    			+ e.getMessage());
+			
+			return "";
 		}
 	    
 	    return results;

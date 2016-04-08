@@ -260,24 +260,12 @@ public class ActionedExclusionTab extends TopologyTab
 	            	}
             	}
             	
-            	if(modulesNames == null && flowNames == null && componentNames == null
-            			&& !((BusinessStream)businessStreamCombo.getValue()).getName().equals("All"))
-            	{
-            		BusinessStream businessStream = ((BusinessStream)businessStreamCombo.getValue());
-            		
-            		modulesNames = new ArrayList<String>();
-            		
-            		for(BusinessStreamFlow flow: businessStream.getFlows())
-            		{
-            			modulesNames.add(flow.getFlow().getModule().getName());
-            		}
-            	}
             	
-            	logger.info("Trying to search for ExclusionEventAction");
+            	logger.debug("Trying to search for ExclusionEventAction");
             	List<ExclusionEventAction> exclusionEventActions = hospitalManagementService.getActionedExclusions
             			(modulesNames, flowNames, fromDate.getValue(), toDate.getValue(), platformConfigurationService.getSearchResultSetSize());
             	
-            	logger.info("Results ExclusionEventAction: " + exclusionEventActions.size());
+            	logger.debug("Results ExclusionEventAction: " + exclusionEventActions.size());
 
             	if(exclusionEventActions == null || exclusionEventActions.size() == 0)
             	{
