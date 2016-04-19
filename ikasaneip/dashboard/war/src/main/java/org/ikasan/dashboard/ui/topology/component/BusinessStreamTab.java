@@ -62,7 +62,9 @@ import org.ikasan.topology.service.TopologyService;
 import org.vaadin.teemu.VaadinIcons;
 import org.vaadin.visjs.networkDiagram.Color;
 import org.vaadin.visjs.networkDiagram.Edge;
+import org.vaadin.visjs.networkDiagram.NetworkDiagram;
 import org.vaadin.visjs.networkDiagram.Node;
+import org.vaadin.visjs.networkDiagram.Node.NodeClickListener;
 import org.vaadin.visjs.networkDiagram.options.HierarchicalLayout;
 import org.vaadin.visjs.networkDiagram.options.HierarchicalLayout.Direction;
 import org.vaadin.visjs.networkDiagram.options.Options;
@@ -86,6 +88,7 @@ import com.vaadin.ui.DragAndDropWrapper;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.Table.TableDragMode;
 import com.vaadin.ui.TextArea;
@@ -110,6 +113,8 @@ public class BusinessStreamTab extends TopologyTab
 	private ComboBox businessStreamCombo;
 	
 	private int i=0;
+	
+	private NetworkDiagram networkDiagram;
 	
 	public BusinessStreamTab(TopologyService topologyService, ComboBox businessStreamCombo)
 	{
@@ -442,13 +447,13 @@ public class BusinessStreamTab extends TopologyTab
     	
 //    	layout.addComponent(controlsLayout);
 //		layout.addComponent(this.businessStreamTable);
-		layout.addComponent(getNetwrokDiagram());
+		layout.addComponent(getNetworkDiagram());
 		
 		this.addComponent(layout);
 		this.setSizeFull();
 	}
 	
-	public DragAndDropWrapper getNetwrokDiagram() 
+	public DragAndDropWrapper getNetworkDiagram() 
 	{		
 		HierarchicalLayout l = new HierarchicalLayout();
 		l.setEnabled(true);
@@ -461,7 +466,13 @@ public class BusinessStreamTab extends TopologyTab
         options.setStabilizationIterations(0);
         options.setStabilize(true);
         
+//        options.s
+        
         MyPhysics p = new MyPhysics();
+//        Repulsion r = new Repulsion();
+//        r.setNodeDistance(200);
+//        p.setRepulsion(r);
+
         
 //        options.setStabilize(true);
         options.setPhysics(p);
@@ -470,64 +481,131 @@ public class BusinessStreamTab extends TopologyTab
         final IkasanNetworkDiagram networkDiagram = new IkasanNetworkDiagram(options);
         networkDiagram.setWidth("100%");
         networkDiagram.setHeight("600px");
+
+//        networkDiagram.
         addComponent(networkDiagram);
 
         //create nodes
-        final Node node1 = new Node(1,"ESB");  
-        node1.setMass(25);
-        node1.setShape(Node.Shape.database);
-        Color esbc = new Color();
-        esbc.setBackgroundColor("#FE9900");
-        esbc.setColor("#FE9900");
-        esbc.setHoverColor("#FE9900");
-        esbc.setHighlightColor("#FE9900");
-        node1.setColor(esbc);
+        final Node esbNode = new Node(1,"ESB");  
+        esbNode.setImage("./VAADIN/themes/dashboard/images/esb.png");
+        esbNode.setMass(1);
         
-//        node1.setImage("https://vaadin.com/download/vaadin-icons/png/flash.png");
-        Node node2 = new Node(2,"Node 2");
+        Node glossReferenceDataAssetPublisherFlowNode = new Node(2,"gloss-referenceData Asset Publisher Flow");       
+        glossReferenceDataAssetPublisherFlowNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
+        glossReferenceDataAssetPublisherFlowNode.setFontSize(9);
+        glossReferenceDataAssetPublisherFlowNode.setMass(1);
+        
+        networkDiagram.addNodeClickListener(new NodeClickListener(glossReferenceDataAssetPublisherFlowNode) {
+			
+			@Override
+			public void onFired(org.vaadin.visjs.networkDiagram.event.node.ClickEvent event) 
+			{
+				Notification.show("You have clicked " + this.getNode().getLabel() + ". Once fully implemented I will be able to give you some" +
+						" very interest details about the ESB and it's behaviour!");
+			}
+		});
        
-//        node2.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
-        final Node node3 = new Node(3,"Node 3");
+        final Node glossReferenceDataAssetTransformerFlowNode = new Node(3,"gloss-referenceData Asset Transformer Flow");        
+        glossReferenceDataAssetTransformerFlowNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
+        glossReferenceDataAssetTransformerFlowNode.setFontSize(9);
+        glossReferenceDataAssetTransformerFlowNode.setMass(1);
         
-//        node3.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
-        Node node4 = new Node(4,"Node 4");
+        networkDiagram.addNodeClickListener(new NodeClickListener(glossReferenceDataAssetTransformerFlowNode) {
+			
+			@Override
+			public void onFired(org.vaadin.visjs.networkDiagram.event.node.ClickEvent event) 
+			{
+				Notification.show("You have clicked " + this.getNode().getLabel() + ". Once fully implemented I will be able to give you some" +
+						" very interest details about the ESB and it's behaviour!");
+			}
+		});
         
-//        node4.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
-        Node node5 = new Node(5,"Node 5");
+        Node cdwAssetNode = new Node(4,"cdw-asset");
+        cdwAssetNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
+        cdwAssetNode.setFontSize(9);
+        cdwAssetNode.setMass(1);
         
-//        node5.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
-        Node node6 = new Node(6,"Node 6");
-       
-//        node6.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
+        networkDiagram.addNodeClickListener(new NodeClickListener(cdwAssetNode) {
+			
+			@Override
+			public void onFired(org.vaadin.visjs.networkDiagram.event.node.ClickEvent event) 
+			{
+				Notification.show("You have clicked " + this.getNode().getLabel() + ". Once fully implemented I will be able to give you some" +
+						" very interest details about the ESB and it's behaviour!");
+			}
+		});
         
-        final Node murex = new Node(10,"MUREX");
-        murex.setShape(Node.Shape.square);
-        Color mc = new Color();
-        mc.setBackgroundColor("#504faf");
-        mc.setColor("#504faf");
-        mc.setHoverColor("#504faf");
-        mc.setHighlightColor("#504faf");
-        murex.setColor(mc);
+        Node gsEsbApprovedSecurityTransformerFlowNode = new Node(5,"GsEsbApprovedSecurity Transformer Flow");
+        gsEsbApprovedSecurityTransformerFlowNode.setFontSize(9);        
+        gsEsbApprovedSecurityTransformerFlowNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
+        gsEsbApprovedSecurityTransformerFlowNode.setMass(1);
+        
+        networkDiagram.addNodeClickListener(new NodeClickListener(gsEsbApprovedSecurityTransformerFlowNode) {
+			
+			@Override
+			public void onFired(org.vaadin.visjs.networkDiagram.event.node.ClickEvent event) 
+			{
+				Notification.show("You have clicked " + this.getNode().getLabel() + ". Once fully implemented I will be able to give you some" +
+						" very interest details about the ESB and it's behaviour!");
+			}
+		});
+        
+        final Node gsEsbApprovedSecurityConsumerFlowNode = new Node(6,"GsEsbApprovedSecurity Consumer Flow");
+        gsEsbApprovedSecurityConsumerFlowNode.setFontSize(9);
+        gsEsbApprovedSecurityConsumerFlowNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
+        gsEsbApprovedSecurityConsumerFlowNode.setMass(1);
+        
+        networkDiagram.addNodeClickListener(new NodeClickListener(gsEsbApprovedSecurityConsumerFlowNode) {
+			
+			@Override
+			public void onFired(org.vaadin.visjs.networkDiagram.event.node.ClickEvent event) 
+			{
+				Notification.show("You have clicked " + this.getNode().getLabel() + ". Once fully implemented I will be able to give you some" +
+						" very interest details about the ESB and it's behaviour! You can see I am flashing red because i have a problem!!", Type.ERROR_MESSAGE);
+			}
+		});
+        
+        
+        final Node goldenSource = new Node(10,"Golden Source");
+        goldenSource.setImage("./VAADIN/themes/dashboard/images/CompuData.png");
+        goldenSource.setFontSize(9);
+        goldenSource.setMass(2);
+        
+        final Node cdw = new Node(11,"Consolidated Data Warehouse");
+        cdw.setImage("./VAADIN/themes/dashboard/images/CompuData.png");
+        cdw.setFontSize(9);
+        cdw.setMass(1);
+        
+        final Node gloss = new Node(12,"Gloss");
+        gloss.setImage("./VAADIN/themes/dashboard/images/CompuData.png");
+        gloss.setFontSize(9);
+        gloss.setMass(1);
 
         //create edges
-        final Edge edge1 = new Edge(node2.getId(),node1.getId(), 2);
+        final Edge edge1 = new Edge(glossReferenceDataAssetTransformerFlowNode.getId(), glossReferenceDataAssetPublisherFlowNode.getId(), 1);
         edge1.setStyle(Edge.Style.arrow);
         
-        Edge edge2 = new Edge(node3.getId(),node1.getId(), 2);
+        Edge edge2 = new Edge(esbNode.getId(), glossReferenceDataAssetTransformerFlowNode.getId(), 1);
         edge2.setStyle(Edge.Style.arrow);
-        Edge edge3 = new Edge(node1.getId(),node5.getId(), 2);
+        final Edge edge3 = new Edge(gsEsbApprovedSecurityConsumerFlowNode.getId(),gsEsbApprovedSecurityTransformerFlowNode.getId(), 1);
         edge3.setStyle(Edge.Style.arrow);
-        Edge edge4 = new Edge(node1.getId(),node4.getId(), 2);
+        Edge edge4 = new Edge(esbNode.getId(),cdwAssetNode.getId(), 1);
         edge4.setStyle(Edge.Style.arrow);
-        Edge edge5 = new Edge(node1.getId(),node6.getId(), 2);
+        Edge edge5 = new Edge(gsEsbApprovedSecurityTransformerFlowNode.getId(),esbNode.getId(), 1);
         edge5.setStyle(Edge.Style.arrow);
         
-        Edge edge6 = new Edge(murex.getId(),node6.getId(), 2);
+        Edge edge6 = new Edge(goldenSource.getId(),gsEsbApprovedSecurityConsumerFlowNode.getId(), 1);
         edge6.setStyle(Edge.Style.arrow);
+        
+        Edge edge7 = new Edge(cdwAssetNode.getId(),cdw.getId(), 1);
+        edge7.setStyle(Edge.Style.arrow);
+        
+        Edge edge8 = new Edge(glossReferenceDataAssetPublisherFlowNode.getId(),gloss.getId(), 1);
+        edge8.setStyle(Edge.Style.arrow);
 
-        networkDiagram.addNode(node1);
-        networkDiagram.addNode(node2,node3,node4,node5,node6, murex);
-        networkDiagram.addEdge(edge1,edge2,edge3,edge4,edge5,edge6);
+        networkDiagram.addNode(esbNode);
+        networkDiagram.addNode(glossReferenceDataAssetPublisherFlowNode,glossReferenceDataAssetTransformerFlowNode,cdwAssetNode,gsEsbApprovedSecurityTransformerFlowNode,gsEsbApprovedSecurityConsumerFlowNode, goldenSource, cdw, gloss);
+        networkDiagram.addEdge(edge1,edge2,edge3,edge4,edge5,edge6, edge7, edge8);
         
         DragAndDropWrapper layoutWrapper =
                 new DragAndDropWrapper(networkDiagram);
@@ -555,7 +633,7 @@ public class BusinessStreamTab extends TopologyTab
 					
 					node.setImage("https://vaadin.com/download/vaadin-icons/png/archive.png");
 					
-					Edge edge = new Edge(node.getId(),node1.getId(), 2);
+					Edge edge = new Edge(node.getId(),esbNode.getId(), 2);
 			        edge.setStyle(Edge.Style.arrow);
 					
 					networkDiagram.addNode(node);
@@ -584,29 +662,36 @@ public class BusinessStreamTab extends TopologyTab
 		        			i++;
 		    				if(i%2 == 0)
 		    				{
-		    					Color c = new Color("#000000");
-		    					c.setColor("#000000");
-		    					edge1.setColor(c);
-		    					logger.info("Setting colour black +");
-		    					
-		    					c = new Color("#00FF00");
-		    					c.setColor("#00FF00");
-		    					node3.setColor(c);
+		    					Color c = new Color("#2b7ce9");
+		    					c.setColor("#2b7ce9");
+		    					edge3.setColor(c);
+//		    					logger.info("Setting colour black +");
+//		    					
+//		    					c = new Color("#00FF00");
+//		    					c.setColor("#00FF00");
+//		    					node3.setColor(c);
+		    					gsEsbApprovedSecurityConsumerFlowNode.setImage("./VAADIN/themes/dashboard/images/1FlowarrowSROBackgroundApp3ab.png");
 		    				}
 		    				else
 		    				{
+//		    					Color c = new Color("#ff0000");
+//		    					c.setColor("#ff0000");
+//		    					edge1.setColor(c);
+//		    					logger.info("Setting colour red +");
+		    					
 		    					Color c = new Color("#ff0000");
 		    					c.setColor("#ff0000");
-		    					edge1.setColor(c);
-		    					logger.info("Setting colour red +");
+		    					edge3.setColor(c);
 		    					
-		    					c = new Color("#ff0000");
-		    					c.setColor("#ff0000");
-		    					node3.setColor(c);
+		    					gsEsbApprovedSecurityConsumerFlowNode.setImage("./VAADIN/themes/dashboard/images/2FlowarrowSROBackgroundApp3ab.png");
 		    				}
 		    				
+		    				
+		    				
 		    				networkDiagram.updateEdge(edge1);
-		    				networkDiagram.updateNode(node3);
+		    				networkDiagram.updateEdge(edge3);
+		    				networkDiagram.updateNode(glossReferenceDataAssetTransformerFlowNode);
+		    				networkDiagram.updateNode(gsEsbApprovedSecurityConsumerFlowNode);
 		    				
 		        		} 
 		        		finally 
@@ -632,6 +717,11 @@ public class BusinessStreamTab extends TopologyTab
 	public void search()
 	{
 		// TODO Auto-generated method stub
+		
+	}
+	
+	public void refesh()
+	{
 		
 	}
 	

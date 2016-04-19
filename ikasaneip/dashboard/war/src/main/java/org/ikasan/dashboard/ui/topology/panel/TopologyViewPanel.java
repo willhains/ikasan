@@ -553,6 +553,11 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		        {
 		        	((FilterManagementTab)event.getTabSheet().getSelectedTab()).refresh();
 		        }
+		        
+		        if(event.getTabSheet().getSelectedTab() instanceof BusinessStreamTab)
+		        {
+		        	((BusinessStreamTab)event.getTabSheet().getSelectedTab()).refresh();
+		        }
 		    }
 		});
 
