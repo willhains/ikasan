@@ -43,19 +43,13 @@ package org.ikasan.trigger.service;
 import org.apache.log4j.Logger;
 import org.ikasan.component.endpoint.rulecheck.Rule;
 import org.ikasan.component.endpoint.rulecheck.service.RuleService;
-import org.ikasan.spec.flow.Flow;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.management.ManagedResourceRecoveryManager;
-import org.ikasan.spec.module.Module;
-import org.ikasan.spec.module.ModuleService;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <code>FlowEventJob</code> for invoking the ScheduledRuleCheckerService
@@ -67,14 +61,15 @@ import java.util.Map;
 public class ScheduleRuleEventJob implements FlowEventJob, Job
 {
     /**
-     * underlying service
+     * logger instance
      */
-    private RuleService ruleService;
+    private static final Logger logger = Logger.getLogger(ScheduleRuleEventJob.class);
 
     /**
-     * Container for modules
+     * underlying service
      */
-    private ModuleService moduleService;
+    private final RuleService ruleService;
+
     /**
      * Recovery manager for this Managed Resource and any extending implementations of it
      */
@@ -82,18 +77,11 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
 
     public static final String RULE_CLASS = "ruleClass";
 
-    public static final String IS_ENABLED = "isEnabled";
-
     public static final String CRON_EXPRESSION = "cronExpression";
 
     public static final String RULE_CONFIGURATION_CLASS = "ruleConfigurationClass";
 
     public static final String RULE_CONFIGURATION_PREFIX = "ruleConfiguration.";
-
-    /**
-     * logger instance
-     */
-    private static final Logger logger = Logger.getLogger(ScheduleRuleEventJob.class);
 
     /**
      * List of names of parameters supported by this job
@@ -104,11 +92,20 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     {
         parameterNames.add(RULE_CLASS);
         parameterNames.add(RULE_CONFIGURATION_CLASS);
-        parameterNames.add(IS_ENABLED);
         parameterNames.add(CRON_EXPRESSION);
         parameterNames.add(RULE_CONFIGURATION_PREFIX + "timeInterval");
     }
 
+    /**
+     * Constructor
+     *
+     * @param ruleService The rule service to use
+     */
+    public ScheduleRuleEventJob(RuleService ruleService)
+    {
+        super();
+        this.ruleService = ruleService;
+    }
     /*
      * (non-Javadoc)
      * 
@@ -123,7 +120,11 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
 
         String ruleName = location+"|"+flowName;
         Rule rule = ruleService.getRule(ruleName);
-        rule.update(event);
+        if(rule!=null)
+        {
+            logger.debug("Updating rule ["+ruleName+"]");
+            rule.update(event);
+        }
     }
 
     /*
@@ -150,17 +151,23 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
         return result;
     }
 
+    /**
+     * Method is triggered by quartz scheduler.
+     *
+     * @param jobExecutionContext
+     * @throws JobExecutionException
+     */
     @Override public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
     {
         try
         {
             String ruleName = jobExecutionContext.getJobDetail().getKey().getName();
-            String moduleName = jobExecutionContext.getJobDetail().getKey().getGroup();
-            //Module module = moduleService.getModule(moduleName);
-            //Flow flow = (Flow) module.getFlows().get(0);
-
             Rule rule = ruleService.getRule(ruleName);
-            rule.check(jobExecutionContext);
+            if(rule!=null)
+            {
+                logger.debug("Execute rule check ["+ruleName+"] base on scheduler["+new Date()+"]");
+                rule.check(jobExecutionContext);
+            }
         }
         catch (Throwable t)
         {
@@ -168,8 +175,4 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
         }
     }
 
-    public void setRuleService(RuleService ruleService)
-    {
-        this.ruleService = ruleService;
-    }
-}
+ }

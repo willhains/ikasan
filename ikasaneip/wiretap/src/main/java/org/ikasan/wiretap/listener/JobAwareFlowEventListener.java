@@ -179,35 +179,6 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
     }
 
     /**
-     * Registers a List of static triggers
-     * <p/>
-     * Static Triggers are usually set through dao, and cannot be
-     * added to or deleted at runtime
-     *
-     * @param staticTriggers - List of Triggers
-     */
-    public void addStaticTriggers(List<Trigger> staticTriggers)
-    {
-        for (Trigger trigger : staticTriggers)
-        {
-            addStaticTrigger(trigger);
-        }
-    }
-
-    /**
-     * Registers a static triggers
-     * <p/>
-     * Static Triggers are usually set through dao, and cannot be
-     * added to or deleted at runtime
-     *
-     * @param trigger - The static Trigger to add
-     */
-    public void addStaticTrigger(Trigger trigger)
-    {
-        mapTrigger(trigger);
-    }
-
-    /**
      * Registers a dynamic trigger
      * <p/>
      * Dynamic triggers may be created and deleted at runtime. They are persisted
@@ -466,7 +437,8 @@ public class JobAwareFlowEventListener implements FlowEventListener, FlowEventLi
 
     private String getRuleName(Trigger trigger){
         StringBuffer ruleName =  new StringBuffer();
-        ruleName.append(trigger.getRelationship().getDescription());
+        TriggerRelationship r = trigger.getRelationship();
+        ruleName.append(r.getDescription());
         ruleName.append(" ");
         ruleName.append(trigger.getFlowElementName());
         ruleName.append("|");

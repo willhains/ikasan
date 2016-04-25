@@ -38,8 +38,6 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-
-
 package org.ikasan.component.endpoint.rulecheck.service;
 
 import org.ikasan.component.endpoint.rulecheck.Rule;
@@ -51,11 +49,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Rule service to create Rule insatnce based on provided p
+ * Rule service to create Rule instance based on provided parameters.
+ * Parameters provided shall provide rule class and rule configuration class.
  */
 public class RuleService
 {
-
     public static final String RULE_CLASS = "ruleClass";
 
     public static final String RULE_CONFIGURATION_CLASS = "ruleConfigurationClass";
@@ -88,21 +86,20 @@ public class RuleService
     {
         Object ruleConfiguration = null;
         String ruleConfigurationClass = param.get(RULE_CONFIGURATION_CLASS);
-        if(ruleConfigurationClass!=null && !ruleConfigurationClass.isEmpty())
+        if (ruleConfigurationClass != null && !ruleConfigurationClass.isEmpty())
         {
             ruleConfiguration = instantiateClass(ruleConfigurationClass);
             setConfigurationProperties(ruleConfiguration, param);
         }
-
         String ruleClass = param.get(RULE_CLASS);
         Object rule = instantiateClass(ruleClass);
 
-        if(BeanUtils.findDeclaredMethod(rule.getClass(),"setConfiguration",ruleConfiguration.getClass())!=null){
+
+        if (ruleConfiguration!=null && BeanUtils.findDeclaredMethod(rule.getClass(), "setConfiguration", ruleConfiguration.getClass()) != null)
+        {
             PropertyAccessor ruleAccessor = PropertyAccessorFactory.forDirectFieldAccess(rule);
             ruleAccessor.setPropertyValue("configuration", ruleConfiguration);
-
         }
-
         if (rule instanceof Rule)
         {
             ((Rule) rule).rebase();
@@ -112,7 +109,6 @@ public class RuleService
         {
             throw new RuntimeException("Provided class" + ruleClass + " is not a instance of Rule.class");
         }
-
     }
 
     private Object instantiateClass(String className)
@@ -134,11 +130,11 @@ public class RuleService
         PropertyAccessor myAccessor = PropertyAccessorFactory.forDirectFieldAccess(ruleConfiguration);
         for (Map.Entry<String, String> entry : param.entrySet())
         {
-           if(entry.getKey().startsWith(RULE_CONFIGURATION_PREFIX)){
-              String propertyName = entry.getKey().substring(RULE_CONFIGURATION_PREFIX.length());
-               myAccessor.setPropertyValue(propertyName, entry.getValue());
-           }
+            if (entry.getKey().startsWith(RULE_CONFIGURATION_PREFIX))
+            {
+                String propertyName = entry.getKey().substring(RULE_CONFIGURATION_PREFIX.length());
+                myAccessor.setPropertyValue(propertyName, entry.getValue());
+            }
         }
-
     }
 }
