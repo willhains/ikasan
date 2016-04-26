@@ -53,6 +53,7 @@ public class SecurityConstants
 	public static String VIEW_WIRETAP_AUTHORITY = "ViewWiretap";
 	public static String VIEW_EXCLUSION_AUTHORITY = "ViewExclusion";
 	public static String VIEW_ACTIONED_EXCLUSIONS_AUTHORITY = "ViewActionedExclusions";
+	public static String VIEW_METRICS_AUTHORITY = "ViewMetricsExclusions";
 	public static String VIEW_ERRORS_AUTHORITY = "ViewErrors";
 	public static String VIEW_SYSTEM_EVENT_AUTHORITY = "ViewErrors";
 	public static String VIEW_CATEGORISED_ERRORS_AUTHORITY = "ViewCategorisedErrors";

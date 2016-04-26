@@ -42,7 +42,9 @@ package org.ikasan.spec.history;
 
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+
 
 /**
  * This Service allows <code>MessageHistoryEvent</code>s to be saved out at runtime for later
@@ -81,6 +83,27 @@ public interface MessageHistoryService<EVENT, RESULT>
     RESULT findMessageHistoryEvents(int pageNo, int pageSize, String orderBy, boolean orderAscending,
                                     Set<String> moduleNames, String flowName, String componentName,
                                     String eventId, String relatedEventId, Date fromDate, Date toDate);
+    
+    /**
+     * Search for MessageHistoryEvents
+     * 
+     * @param pageNo
+     * @param pageSize
+     * @param orderBy
+     * @param orderAscending
+     * @param moduleNames
+     * @param flowNames
+     * @param componentNames
+     * @param eventId
+     * @param relatedEventId
+     * @param fromDate
+     * @param toDate
+     * @param resultsWithMetricsOnly
+     * @return
+     */
+    RESULT findMessageHistoryEvents(int pageNo, int pageSize, String orderBy, boolean orderAscending, 
+    		List<String> moduleNames, List<String> flowNames, List<String> componentNames,
+    		String eventId, String relatedEventId, Date fromDate, Date toDate, boolean resultsWithMetricsOnly);
 
     /**
      * Retrieve a MessageHistoryEvent via its eventId or relatedEventId

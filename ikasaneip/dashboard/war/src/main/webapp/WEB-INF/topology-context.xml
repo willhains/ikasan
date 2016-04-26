@@ -53,6 +53,7 @@
         <constructor-arg ref="securityService"/>
         <constructor-arg ref="hospitalService"/>
         <constructor-arg ref="flowConfigurationWindow"/>
+        <constructor-arg ref="messageHistoryService"/>
     </bean>
     
     <bean id="topologyCacheApplication" class="org.ikasan.dashboard.ui.monitor.rest.TopologyCacheApplication">

@@ -40,11 +40,12 @@
  */
 package org.ikasan.history.dao;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
 import org.ikasan.spec.history.MessageHistoryEvent;
 import org.ikasan.spec.search.PagedSearchResult;
-
-import java.util.Date;
-import java.util.Set;
 
 /**
  * DAO contract for accessing Message History data
@@ -78,6 +79,27 @@ public interface MessageHistoryDao
     PagedSearchResult<MessageHistoryEvent> findMessageHistoryEvents(int pageNo, int pageSize, String orderBy, boolean orderAscending,
                                                                     Set<String> moduleNames, String flowName, String componentName,
                                                                     String eventId, String relatedEventId, Date fromDate, Date toDate);
+    
+    /**
+     * Search for MessageHistoryEvents
+     * 
+     * @param pageNo
+     * @param pageSize
+     * @param orderBy
+     * @param orderAscending
+     * @param moduleNames
+     * @param flowNames
+     * @param componentNames
+     * @param eventId
+     * @param relatedEventId
+     * @param fromDate
+     * @param toDate
+     * @param resultsWithMetricsOnly
+     * @return
+     */
+    PagedSearchResult<MessageHistoryEvent> findMessageHistoryEvents(int pageNo, int pageSize, String orderBy, boolean orderAscending,
+                                                                    List<String> moduleNames, List<String> flowNames, List<String> componentNames,
+                                                                    String eventId, String relatedEventId, Date fromDate, Date toDate, boolean resultsWithMetricsOnly);
 
     /**
      * Retrieve a MessageHistoryEvent (or set of events from multiple Flows) using the lifeId or relatedLifeId

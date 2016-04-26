@@ -128,14 +128,16 @@ public class HibernateMessageHistoryDaoTest
     @Test
     public void test_search_lifeId()
     {
-        PagedSearchResult<MessageHistoryEvent> results = messageHistoryDao.findMessageHistoryEvents(0, 10, null, true, null, null, null, "lifeId", null, null, null);
+    	String name = null;
+        PagedSearchResult<MessageHistoryEvent> results = messageHistoryDao.findMessageHistoryEvents(0, 10, null, true, null, name, null, "lifeId", null, null, null);
         Assert.assertTrue(results.getPagedResults().size() == 1);
     }
 
     @Test
     public void test_search_relatedLifeId()
     {
-        PagedSearchResult<MessageHistoryEvent> results = messageHistoryDao.findMessageHistoryEvents(0, 10, null, true, null, null, null, null, "relatedLifeId", null, null);
+    	String name = null;
+        PagedSearchResult<MessageHistoryEvent> results = messageHistoryDao.findMessageHistoryEvents(0, 10, null, true, null, null, name, null, "relatedLifeId", null, null);
         Assert.assertTrue(results.getPagedResults().size() == 1);
     }
 

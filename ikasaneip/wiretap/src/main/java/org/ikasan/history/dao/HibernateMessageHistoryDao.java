@@ -161,11 +161,11 @@ public class HibernateMessageHistoryDao extends HibernateDaoSupport implements M
                 }
                 if (restrictionExists(fromDate))
                 {
-                    criteria.add(Restrictions.ge("startTime", fromDate.getTime()));
+                    criteria.add(Restrictions.ge("startTimeMillis", fromDate.getTime()));
                 }
                 if (restrictionExists(toDate))
                 {
-                    criteria.add(Restrictions.le("endTime", toDate.getTime()));
+                    criteria.add(Restrictions.le("endTimeMillis", toDate.getTime()));
                 }
                 return criteria;
             }
@@ -420,5 +420,98 @@ public class HibernateMessageHistoryDao extends HibernateDaoSupport implements M
 	public void setMessageHistoryHousekeepQuery(String messageHistoryHousekeepQuery) 
 	{
 		this.messageHistoryHousekeepQuery = messageHistoryHousekeepQuery;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.history.dao.MessageHistoryDao#findMessageHistoryEvents(int, int, java.lang.String, boolean, java.util.List, java.util.List, java.util.List, java.lang.String, java.lang.String, java.util.Date, java.util.Date)
+	 */
+	@Override
+	public PagedSearchResult<MessageHistoryEvent> findMessageHistoryEvents(
+			final int pageNo, final int pageSize, final String orderBy, final boolean orderAscending,
+			final List<String> moduleNames, final List<String> flowNames,
+			final List<String> componentNames, final String eventId, final String relatedEventId,
+			final Date fromDate, final Date toDate, final boolean resultsWithMetricsOnly)
+	{
+		return getHibernateTemplate().execute(new HibernateCallback<PagedSearchResult<MessageHistoryEvent>>()
+        {
+            public PagedSearchResult<MessageHistoryEvent> doInHibernate(Session session) throws HibernateException
+            {
+                Criteria dataCriteria = getCriteria(session);
+                dataCriteria.setMaxResults(pageSize);
+                int firstResult = pageNo * pageSize;
+                dataCriteria.setFirstResult(firstResult);
+                if (orderBy != null)
+                {
+                    if (orderAscending)
+                    {
+                        dataCriteria.addOrder(Order.asc(orderBy));
+                    }
+                    else
+                    {
+                        dataCriteria.addOrder(Order.desc(orderBy));
+                    }
+                }
+                List<MessageHistoryEvent> messageHistoryResults = dataCriteria.list();
+
+                Criteria metaDataCriteria = getCriteria(session);
+                metaDataCriteria.setProjection(Projections.rowCount());
+                Long rowCount = 0L;
+                List<Long> rowCountList = metaDataCriteria.list();
+                if (!rowCountList.isEmpty())
+                {
+                    rowCount = rowCountList.get(0);
+                }
+
+                return new ArrayListPagedSearchResult<>(messageHistoryResults, firstResult, rowCount);
+            }
+
+            /**
+             * Create a criteria instance for each invocation of data or metadata queries.
+             * @param session the hibernate Session
+             * @return a Criteria based on the provided search parameters
+             */
+            private Criteria getCriteria(Session session)
+            {
+                Criteria criteria = session.createCriteria(MessageHistoryEvent.class);
+
+                if (restrictionExists(moduleNames))
+                {
+                    criteria.add(Restrictions.in("moduleName", moduleNames));
+                }
+                if (restrictionExists(flowNames))
+                {
+                    criteria.add(Restrictions.in("flowName", flowNames));
+                }
+                if (restrictionExists(componentNames))
+                {
+                    criteria.add(Restrictions.in("componentName", componentNames));
+                }
+                if (restrictionExists(eventId))
+                {
+                    criteria.add(Restrictions.or(
+                                    Restrictions.eq("beforeEventIdentifier", eventId),
+                                    Restrictions.eq("afterEventIdentifier", eventId) ));
+                }
+                if (restrictionExists(relatedEventId))
+                {
+                    criteria.add(Restrictions.or(
+                                    Restrictions.eq("beforeRelatedEventIdentifier", relatedEventId),
+                                    Restrictions.eq("afterRelatedEventIdentifier", relatedEventId)));
+                }
+                if (restrictionExists(fromDate))
+                {
+                    criteria.add(Restrictions.ge("startTimeMillis", fromDate.getTime()));
+                }
+                if (restrictionExists(toDate))
+                {
+                    criteria.add(Restrictions.le("endTimeMillis", toDate.getTime()));
+                }
+                if (resultsWithMetricsOnly)
+                {
+                    criteria.add(Restrictions.isNotEmpty("metrics"));
+                }
+                return criteria;
+            }
+        });
 	}
 }

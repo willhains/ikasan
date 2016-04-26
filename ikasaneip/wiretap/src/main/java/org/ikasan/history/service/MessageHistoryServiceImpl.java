@@ -103,6 +103,20 @@ public class MessageHistoryServiceImpl implements MessageHistoryService<FlowInvo
     {
         return messageHistoryDao.getMessageHistoryEvent(pageNo, pageSize, orderBy, orderAscending, eventId, lookupRelatedEventId ? eventId : null);
     }
+    
+    /* (non-Javadoc)
+	 * @see org.ikasan.spec.history.MessageHistoryService#findMessageHistoryEvents(int, int, java.lang.String, boolean, java.util.List, java.util.List, java.util.List, java.lang.String, java.lang.String, java.util.Date, java.util.Date)
+	 */
+	@Override
+	public PagedSearchResult<MessageHistoryEvent> findMessageHistoryEvents(
+			int pageNo, int pageSize, String orderBy, boolean orderAscending,
+			List<String> moduleNames, List<String> flowNames,
+			List<String> componentNames, String eventId, String relatedEventId,
+			Date fromDate, Date toDate, boolean resultsWithMetricsOnly) 
+	{
+		return this.messageHistoryDao.findMessageHistoryEvents(pageNo, pageSize, orderBy, orderAscending, moduleNames, flowNames
+				, componentNames, eventId, relatedEventId, fromDate, toDate, resultsWithMetricsOnly);
+	}
 
     @Override
     public void housekeep()
