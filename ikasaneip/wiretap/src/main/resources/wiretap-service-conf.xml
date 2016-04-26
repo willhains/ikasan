@@ -125,6 +125,7 @@
 
     <bean id="scheduleRuleEventJob" class="org.ikasan.trigger.service.ScheduleRuleEventJob">
         <constructor-arg name="ruleService" ref="ruleService"/>
+        <constructor-arg name="errorReportingService" ref="errorReportingService"/>
     </bean>
 
     <bean id="ruleService"

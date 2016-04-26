@@ -43,8 +43,8 @@ package org.ikasan.trigger.service;
 import org.apache.log4j.Logger;
 import org.ikasan.component.endpoint.rulecheck.Rule;
 import org.ikasan.component.endpoint.rulecheck.service.RuleService;
+import org.ikasan.spec.error.reporting.ErrorReportingService;
 import org.ikasan.spec.flow.FlowEvent;
-import org.ikasan.spec.management.ManagedResourceRecoveryManager;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -71,9 +71,10 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     private final RuleService ruleService;
 
     /**
-     * Recovery manager for this Managed Resource and any extending implementations of it
+     * Error Reporting service used o notify failures in case of exceptions during scheduler
+     * callback process.
      */
-    protected ManagedResourceRecoveryManager managedResourceRecoveryManager;
+    private final ErrorReportingService errorReportingService;
 
     public static final String RULE_CLASS = "ruleClass";
 
@@ -99,13 +100,16 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     /**
      * Constructor
      *
-     * @param ruleService The rule service to use
+     * @param ruleService           The rule service to use
+     * @param errorReportingService the error service
      */
-    public ScheduleRuleEventJob(RuleService ruleService)
+    public ScheduleRuleEventJob(final RuleService ruleService, final ErrorReportingService errorReportingService)
     {
         super();
         this.ruleService = ruleService;
+        this.errorReportingService = errorReportingService;
     }
+
     /*
      * (non-Javadoc)
      * 
@@ -117,12 +121,11 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     public void execute(String location, String moduleName, String flowName, FlowEvent event,
             Map<String, String> params)
     {
-
-        String ruleName = location+"|"+flowName;
+        String ruleName = location + "|" + flowName;
         Rule rule = ruleService.getRule(ruleName);
-        if(rule!=null)
+        if (rule != null)
         {
-            logger.debug("Updating rule ["+ruleName+"]");
+            logger.debug("Updating rule [" + ruleName + "]");
             rule.update(event);
         }
     }
@@ -147,7 +150,6 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
     public Map<String, String> validateParameters(Map<String, String> params)
     {
         Map<String, String> result = new HashMap<String, String>();
-
         return result;
     }
 
@@ -159,20 +161,34 @@ public class ScheduleRuleEventJob implements FlowEventJob, Job
      */
     @Override public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
     {
+        String flowElementName = null;
         try
         {
             String ruleName = jobExecutionContext.getJobDetail().getKey().getName();
+            flowElementName = getFlowElementName(ruleName);
             Rule rule = ruleService.getRule(ruleName);
-            if(rule!=null)
+            if (rule != null)
             {
-                logger.debug("Execute rule check ["+ruleName+"] base on scheduler["+new Date()+"]");
+                logger.debug("Execute rule check [" + ruleName + "] base on scheduler[" + new Date() + "]");
                 rule.check(jobExecutionContext);
             }
         }
         catch (Throwable t)
         {
-            this.managedResourceRecoveryManager.recover(t);
+            this.errorReportingService.notify(flowElementName, t);
         }
     }
 
- }
+    private String getFlowElementName(String ruleName)
+    {
+        int separatorIndex = ruleName.indexOf('|');
+        if (separatorIndex == -1)
+        {
+            return ruleName;
+        }
+        String flowElementName = ruleName.substring(0, separatorIndex);
+        flowElementName = flowElementName.replace("before ", "");
+        flowElementName = flowElementName.replace("after ", "");
+        return flowElementName;
+    }
+}

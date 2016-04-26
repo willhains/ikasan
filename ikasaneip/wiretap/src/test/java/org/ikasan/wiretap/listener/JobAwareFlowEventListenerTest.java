@@ -41,9 +41,9 @@
 package org.ikasan.wiretap.listener;
 
 import org.ikasan.component.endpoint.rulecheck.Rule;
-import org.ikasan.component.endpoint.rulecheck.RuleBreachException;
 import org.ikasan.component.endpoint.rulecheck.service.RuleService;
 import org.ikasan.scheduler.ScheduledJobFactory;
+import org.ikasan.spec.error.reporting.ErrorReportingService;
 import org.ikasan.spec.flow.FlowElement;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.module.Module;
@@ -99,15 +99,17 @@ public class JobAwareFlowEventListenerTest
     final TriggerDao triggerDao = mockery.mock(TriggerDao.class,"mockTriggerDao");
     final WiretapService wiretapService = mockery.mock(WiretapService.class,"mockWiretapService");
     final RuleService ruleService = mockery.mock(RuleService.class,"mockRuleService");
-    final ModuleService moduleSevice = mockery.mock(ModuleService.class,"mockModuleService");
+    final ErrorReportingService errorReportingService = mockery.mock(ErrorReportingService.class,"mockErrorReportingService");
+    final ModuleService moduleService = mockery.mock(ModuleService.class,"mockModuleService");
     final ScheduledJobFactory scheduledJobFactory = mockery.mock(ScheduledJobFactory.class,"mockScheduledJobFactory");
 
     @Before
     public void setup(){
         Map<String, FlowEventJob> flowEventJobs = new HashMap<>();
-        flowEventJobs.put("scheduleRuleEventJob",new ScheduleRuleEventJob(ruleService));
+        flowEventJobs.put("scheduleRuleEventJob",new ScheduleRuleEventJob(ruleService,errorReportingService));
         flowEventJobs.put("wiretapEventJob",new WiretapEventJob(wiretapService));
-        uut= new JobAwareFlowEventListener(flowEventJobs,triggerDao,scheduledJobFactory,scheduler,ruleService,moduleSevice);
+        uut= new JobAwareFlowEventListener(flowEventJobs,triggerDao,scheduledJobFactory,scheduler,ruleService,
+                moduleService);
     }
 
     @Test
@@ -123,7 +125,7 @@ public class JobAwareFlowEventListenerTest
         mockery.checking(new Expectations()
         {
             {
-                oneOf(moduleSevice).getModules();
+                oneOf(moduleService).getModules();
                 will(returnValue(modules));
 
                 oneOf(module).getName();
@@ -158,7 +160,7 @@ public class JobAwareFlowEventListenerTest
         mockery.checking(new Expectations()
         {
             {
-                oneOf(moduleSevice).getModules();
+                oneOf(moduleService).getModules();
                 will(returnValue(modules));
 
                 oneOf(module).getName();
@@ -221,7 +223,7 @@ public class JobAwareFlowEventListenerTest
         mockery.checking(new Expectations()
         {
             {
-                oneOf(moduleSevice).getModules();
+                oneOf(moduleService).getModules();
                 will(returnValue(modules));
 
                 oneOf(module).getName();

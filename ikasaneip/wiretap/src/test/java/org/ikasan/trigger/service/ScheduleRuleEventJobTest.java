@@ -44,6 +44,7 @@ import org.ikasan.component.endpoint.rulecheck.Rule;
 import org.ikasan.component.endpoint.rulecheck.RuleBreachException;
 import org.ikasan.component.endpoint.rulecheck.service.RuleService;
 import org.ikasan.scheduler.ScheduledJobFactory;
+import org.ikasan.spec.error.reporting.ErrorReportingService;
 import org.ikasan.spec.flow.FlowElement;
 import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.module.Module;
@@ -88,10 +89,11 @@ public class ScheduleRuleEventJobTest
     final Scheduler scheduler = mockery.mock(Scheduler.class, "mockScheduler");
 
     final RuleService ruleService = mockery.mock(RuleService.class,"mockRuleService");
+    final ErrorReportingService errorReportingService = mockery.mock(ErrorReportingService.class,"mockErrorReportingService");
 
     @Before
     public void setup(){
-        uut = new ScheduleRuleEventJob(ruleService);
+        uut = new ScheduleRuleEventJob(ruleService,errorReportingService);
     }
 
     @Test
@@ -231,6 +233,93 @@ public class ScheduleRuleEventJobTest
 
     }
 
+    @Test
+    public void execute_by_scheduler_when_ruleService_returns_rule_and_rule_check_throws_runtimeexception() throws JobExecutionException, RuleBreachException
+    {
+
+        final String ruleName="after test-flow-element-name|test-flow-name";
+        final String moduleName="testModule";
+
+        final JobExecutionContext jobExecutionContext = mockery.mock(JobExecutionContext.class,"jobExecutionContextMock");
+        final JobDetail jobDetail = mockery.mock(JobDetail.class,"jobDetailMock");
+        final JobKey jobKey = new JobKey(ruleName,moduleName);
+
+        final Rule rule = mockery.mock(Rule.class,"mockRule");
+        final RuntimeException exception=  new RuntimeException("Rule check failed");
+
+        mockery.checking(new Expectations()
+        {
+            {
+
+                exactly(1).of(jobExecutionContext).getJobDetail();
+                will(returnValue(jobDetail));
+
+                exactly(1).of(jobDetail).getKey();
+                will(returnValue(jobKey));
+
+                exactly(1).of(ruleService).getRule(ruleName);
+                will(returnValue(rule));
+
+                exactly(1).of(rule).check(jobExecutionContext);
+                will(throwException(exception));
+
+                exactly(1).of(errorReportingService).notify("test-flow-element-name", exception);
+
+
+            }
+        });
+
+        // do test
+        uut.execute(jobExecutionContext);
+
+        //assert
+        mockery.assertIsSatisfied();
+
+    }
+
+    @Test
+    public void execute_by_scheduler_when_ruleService_returns_rule_and_rule_check_throws_RuleBreachedException() throws JobExecutionException, RuleBreachException
+    {
+
+        final String ruleName="after test-flow-element-name|test-flow-name";
+        final String moduleName="testModule";
+
+        final JobExecutionContext jobExecutionContext = mockery.mock(JobExecutionContext.class,"jobExecutionContextMock");
+        final JobDetail jobDetail = mockery.mock(JobDetail.class,"jobDetailMock");
+        final JobKey jobKey = new JobKey(ruleName,moduleName);
+
+        final Rule rule = mockery.mock(Rule.class,"mockRule");
+        final RuleBreachException exception=  new RuleBreachException("Rule check failed");
+
+        mockery.checking(new Expectations()
+        {
+            {
+
+                exactly(1).of(jobExecutionContext).getJobDetail();
+                will(returnValue(jobDetail));
+
+                exactly(1).of(jobDetail).getKey();
+                will(returnValue(jobKey));
+
+                exactly(1).of(ruleService).getRule(ruleName);
+                will(returnValue(rule));
+
+                exactly(1).of(rule).check(jobExecutionContext);
+                will(throwException(exception));
+
+                exactly(1).of(errorReportingService).notify("test-flow-element-name", exception);
+
+
+            }
+        });
+
+        // do test
+        uut.execute(jobExecutionContext);
+
+        //assert
+        mockery.assertIsSatisfied();
+
+    }
 
 
 }
