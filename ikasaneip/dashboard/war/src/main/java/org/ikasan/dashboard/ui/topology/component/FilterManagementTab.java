@@ -42,6 +42,7 @@ package org.ikasan.dashboard.ui.topology.component;
 
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -130,8 +131,10 @@ public class FilterManagementTab extends TopologyTab
 	private Filter filter;
 	private RoleFilter roleFilter;
 	
-	public FilterManagementTab(TopologyService topologyService, SecurityService securityService)
+	public FilterManagementTab(TopologyService topologyService, SecurityService securityService,
+			HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.topologyService = topologyService;
 		this.securityService = securityService;
 		

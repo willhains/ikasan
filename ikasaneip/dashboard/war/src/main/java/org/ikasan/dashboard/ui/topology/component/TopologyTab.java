@@ -43,6 +43,7 @@ package org.ikasan.dashboard.ui.topology.component;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 import org.ikasan.dashboard.ui.framework.util.DashboardSessionValueConstants;
@@ -54,6 +55,7 @@ import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.FilterComponent;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
+import org.ikasan.topology.model.ServerModule;
 import org.vaadin.teemu.VaadinIcons;
 
 import com.vaadin.event.DataBoundTransferable;
@@ -63,8 +65,8 @@ import com.vaadin.event.dd.acceptcriteria.AcceptAll;
 import com.vaadin.event.dd.acceptcriteria.AcceptCriterion;
 import com.vaadin.server.VaadinService;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.PopupDateField;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.Table.TableDragMode;
 import com.vaadin.ui.VerticalLayout;
@@ -86,6 +88,24 @@ public abstract class TopologyTab extends VerticalLayout
 	protected PopupDateField errorFromDate;
 	protected PopupDateField errorToDate;
 	
+	protected HashMap<String, Flow> flowMap = new HashMap<String, Flow>();
+	protected HashMap<String, Component> componentMap = new HashMap<String, Component>();
+	
+	
+	/**
+	 * Constructor
+	 * 
+	 * @param flowMap
+	 * @param componentMap
+	 */
+	public TopologyTab(HashMap<String, Flow> flowMap,
+			HashMap<String, Component> componentMap) 
+	{
+		super();
+		this.flowMap = flowMap;
+		this.componentMap = componentMap;
+	}
+
 	public abstract void createLayout();
 	
 	public abstract void search();
@@ -163,16 +183,16 @@ public abstract class TopologyTab extends VerticalLayout
 				final DataBoundTransferable t = (DataBoundTransferable) dropEvent
 	                        .getTransferable();
 			
-				if(t.getItemId() instanceof Module)
+				if(t.getItemId() instanceof ServerModule)
 				{
-					final Module module = (Module) t
+					final ServerModule module = (ServerModule) t
 							.getItemId();
 					logger.debug("sourceContainer.getText(): "
-							+ module.getName());
+							+ module.getModule().getName());
 					
-					addModule(module);
+					addModule(module.getModule());
 
-					for(final Flow flow: module.getFlows())
+					for(final Flow flow: module.getModule().getFlows())
 					{				
 						addFlow(flow);
 						
@@ -205,10 +225,11 @@ public abstract class TopologyTab extends VerticalLayout
 				final DataBoundTransferable t = (DataBoundTransferable) dropEvent
 	                        .getTransferable();
 			
-				if(t.getItemId() instanceof Flow)
+				
+				if(t.getItemId() instanceof String 
+						&& ((String)t.getItemId()).startsWith("flow_"))
 				{
-					final Flow flow = (Flow) t
-							.getItemId();
+					final Flow flow = flowMap.get((String)t.getItemId());
 										
 					addFlow(flow);
 						
@@ -242,10 +263,10 @@ public abstract class TopologyTab extends VerticalLayout
 				final DataBoundTransferable t = (DataBoundTransferable) dropEvent
 	                        .getTransferable();
 			
-				if(t.getItemId() instanceof Component)
+				if(t.getItemId() instanceof String 
+						&& ((String)t.getItemId()).startsWith("component_"))
 				{
-					final Component component = (Component) t
-							.getItemId();
+					final Component component = componentMap.get((String)t.getItemId());
 					
 					addComponent(component);		
 				}

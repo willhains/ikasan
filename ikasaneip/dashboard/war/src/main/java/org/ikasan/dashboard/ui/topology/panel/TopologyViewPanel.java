@@ -406,8 +406,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     			&& (authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)
     					|| authentication.hasGrantedAuthority(SecurityConstants.VIEW_BUSINESS_STREAM_AUTHORITY)))
     	{			
-			BusinessStreamTab businessStreamTab = new BusinessStreamTab(this.topologyService
-					, this.businessStreamCombo);
+			BusinessStreamTab businessStreamTab = new BusinessStreamTab(this.topologyService, this.businessStreamCombo
+					, this.flowMap, this.componentMap);
 			
 			businessStreamTab.createLayout();
 			
@@ -421,7 +421,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     					|| authentication.hasGrantedAuthority(SecurityConstants.VIEW_WIRETAP_AUTHORITY)))
     	{
        		WiretapTab wiretapTab = new WiretapTab
-					(this.wiretapDao, this.treeViewBusinessStreamCombo, this.platformConfigurationService);
+					(this.wiretapDao, this.platformConfigurationService,
+							this.flowMap, this.componentMap);
        		wiretapTab.createLayout();
        		wiretapTab.applyFilter();
 			
@@ -435,8 +436,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     					|| authentication.hasGrantedAuthority(SecurityConstants.VIEW_ERRORS_AUTHORITY)))
     	{    		
     		ErrorOccurrenceTab errorOccurrenceTab = new ErrorOccurrenceTab
-					(this.errorReportingService, this.treeViewBusinessStreamCombo
-							, this.errorReportingManagementService, this.platformConfigurationService);
+					(this.errorReportingService, this.errorReportingManagementService, this.platformConfigurationService
+							, this.flowMap, this.componentMap);
     		errorOccurrenceTab.createLayout();
 			errorOccurrenceTab.applyFilter();
 			
@@ -450,7 +451,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     					|| authentication.hasGrantedAuthority(SecurityConstants.VIEW_ERRORS_AUTHORITY)))
     	{    		
     		ActionedErrorOccurrenceTab actionedErrorOccurrenceTab = new ActionedErrorOccurrenceTab
-					(this.errorReportingService, this.treeViewBusinessStreamCombo, this.errorReportingManagementService);
+					(this.errorReportingService, this.errorReportingManagementService,
+							this.flowMap, this.componentMap);
 			
     		actionedErrorOccurrenceTab.createLayout();
     		actionedErrorOccurrenceTab.applyFilter();
@@ -467,7 +469,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			CategorisedErrorTab categorisedErrorTab = new CategorisedErrorTab
 					(this.errorCategorisationService, this.errorReportingManagementService,
 							this.hospitalManagementService, this.topologyService, this.exclusionManagementService,
-							this.platformConfigurationService, true);
+							this.platformConfigurationService, true, this.flowMap, this.componentMap);
 			
 			categorisedErrorTab.createLayout();
 			categorisedErrorTab.resetSearchDates();
@@ -484,7 +486,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     	{
     		final ExclusionsTab exclusionsTab = new ExclusionsTab(this.errorReportingService, this.errorReportingManagementService,
     				this.exclusionManagementService, this.hospitalManagementService, this.topologyService, 
-    				this.treeViewBusinessStreamCombo, this.hospitalService);
+    				this.hospitalService, this.flowMap, this.componentMap);
     		
     		exclusionsTab.createLayout();
     		exclusionsTab.applyFilter();
@@ -500,8 +502,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     	{		
 			ActionedExclusionTab actionedExclusionTab = new ActionedExclusionTab
 					(this.exclusionManagementService, this.hospitalManagementService,
-							this.errorReportingService, this.topologyService, this.treeViewBusinessStreamCombo,
-							this.platformConfigurationService);
+							this.errorReportingService, this.topologyService,
+							this.platformConfigurationService, this.flowMap, this.componentMap);
 			
 			actionedExclusionTab.createLayout();
 			actionedExclusionTab.applyFilter();
@@ -529,7 +531,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     	{
     		
     		final FilterManagementTab filterManagementTab = new FilterManagementTab
-					(this.topologyService, this.securityService);
+					(this.topologyService, this.securityService, this.flowMap, this.componentMap);
 
     		filterManagementTab.createLayout();
 			
@@ -553,11 +555,6 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		        {
 		        	((FilterManagementTab)event.getTabSheet().getSelectedTab()).refresh();
 		        }
-		        
-//		        if(event.getTabSheet().getSelectedTab() instanceof BusinessStreamTab)
-//		        {
-//		        	((BusinessStreamTab)event.getTabSheet().getSelectedTab()).refresh();
-//		        }
 		    }
 		});
 

@@ -126,6 +126,7 @@ public class ReplayTab extends TopologyTab
 	public ReplayTab(ReplayManagementService<ReplayEvent, ReplayAudit, ReplayAuditEvent> replayManagementService, ReplayService<ReplayEvent, ReplayAuditEvent> replayService,
 			PlatformConfigurationService platformConfigurationService)
 	{
+		super(null, null);
 		this.replayManagementService = replayManagementService;
 		this.replayService = replayService;
 		this.platformConfigurationService = platformConfigurationService;

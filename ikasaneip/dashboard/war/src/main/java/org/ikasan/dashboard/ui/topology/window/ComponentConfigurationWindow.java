@@ -124,6 +124,9 @@ public class ComponentConfigurationWindow extends AbstractConfigurationWindow
     	{
     		Server server = component.getFlow().getModule().getServerOnWhichActive();
     		
+    		logger.info("Server = " + server);
+    		logger.info("Component = " + component);
+    		
     		String url = server.getUrl() + ":" + server.getPort()
     				+ component.getFlow().getModule().getContextRoot()
     				+ "/rest/configuration/createConfiguration/"

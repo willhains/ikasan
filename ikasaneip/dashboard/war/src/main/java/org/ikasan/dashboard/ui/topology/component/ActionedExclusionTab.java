@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -127,7 +128,6 @@ public class ActionedExclusionTab extends TopologyTab
 	private PopupDateField fromDate;
 	private PopupDateField toDate;
 	
-	private ComboBox businessStreamCombo;
 	
 	private float splitPosition;
 	private Unit splitUnit;
@@ -150,13 +150,13 @@ public class ActionedExclusionTab extends TopologyTab
 	
 	public ActionedExclusionTab(ExclusionManagementService<ExclusionEvent, String> exclusionManagementService,
 			HospitalManagementService<ExclusionEventAction, ModuleActionedExclusionCount> hospitalManagementService,ErrorReportingService errorReportingService,
-			TopologyService topologyService, ComboBox businessStreamCombo, PlatformConfigurationService platformConfigurationService)
+			TopologyService topologyService, PlatformConfigurationService platformConfigurationService, HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.exclusionManagementService = exclusionManagementService;
 		this.hospitalManagementService = hospitalManagementService;
 		this.errorReportingService = errorReportingService;
 		this.topologyService = topologyService;
-		this.businessStreamCombo = businessStreamCombo;
 		this.platformConfigurationService = platformConfigurationService;
 	}
 	

@@ -41,6 +41,7 @@
 package org.ikasan.dashboard.ui.topology.component;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,6 +57,7 @@ import org.ikasan.security.service.authentication.IkasanAuthentication;
 import org.ikasan.topology.model.BusinessStream;
 import org.ikasan.topology.model.BusinessStreamFlow;
 import org.ikasan.topology.model.BusinessStreamFlowKey;
+import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
 import org.ikasan.topology.service.TopologyService;
@@ -116,8 +118,11 @@ public class BusinessStreamTab extends TopologyTab
 	
 	private NetworkDiagram networkDiagram;
 	
-	public BusinessStreamTab(TopologyService topologyService, ComboBox businessStreamCombo)
+	public BusinessStreamTab(TopologyService topologyService, ComboBox businessStreamCombo,
+			HashMap<String, Flow> flowMap, 
+			HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.topologyService = topologyService;
 		this.businessStreamCombo = businessStreamCombo;
 	}

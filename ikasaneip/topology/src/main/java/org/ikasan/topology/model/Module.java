@@ -224,6 +224,11 @@ public class Module implements Comparable<Module>
 			}
 		}
 		
+		if(this.serverModules.size() == 1)
+		{
+			return this.serverModules.iterator().next().getServer();
+		}
+		
 		return null;
 	}
 

@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -104,8 +105,7 @@ public class ActionedErrorOccurrenceTab extends TopologyTab
 	
 	private PopupDateField errorFromDate;
 	private PopupDateField errorToDate;
-	
-	private ComboBox businessStreamCombo;
+
 	
 	private float splitPosition;
 	private Unit splitUnit;
@@ -116,8 +116,10 @@ public class ActionedErrorOccurrenceTab extends TopologyTab
 	private ErrorReportingManagementService errorReportingManagementService;
 	
 	public ActionedErrorOccurrenceTab(ErrorReportingService errorReportingService,
-			ComboBox businessStreamCombo, ErrorReportingManagementService errorReportingManagementService)
+			ErrorReportingManagementService errorReportingManagementService, 
+			HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.errorReportingService = errorReportingService;
 		if(this.errorReportingService == null)
 		{
@@ -128,8 +130,6 @@ public class ActionedErrorOccurrenceTab extends TopologyTab
 		{
 			throw new IllegalArgumentException("errorReportingManagementService cannot be null!");
 		}
-		
-		this.businessStreamCombo = businessStreamCombo;
 	}
 	
 	protected Container buildContainer() 

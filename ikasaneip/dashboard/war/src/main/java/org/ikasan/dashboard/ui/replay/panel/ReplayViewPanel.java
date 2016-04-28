@@ -539,7 +539,7 @@ public class ReplayViewPanel extends Panel implements View, Action.Handler
 		for (Iterator<?> it = this.moduleTree.getItemIds().iterator(); it.hasNext();) 
 		{
 			Object nextItem = it.next();
-			if(nextItem instanceof Module)
+			if(nextItem instanceof ServerModule)
 			{
 				this.moduleTree.collapseItemsRecursively(nextItem);
 			}

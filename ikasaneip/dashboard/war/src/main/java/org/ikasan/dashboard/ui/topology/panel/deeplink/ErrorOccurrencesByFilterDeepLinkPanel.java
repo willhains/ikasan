@@ -148,8 +148,8 @@ public class ErrorOccurrencesByFilterDeepLinkPanel extends UI
 		}
 		
 		
-		ErrorOccurrenceTab tab = new ErrorOccurrenceTab(errorReportingService, null, errorReportingManagementService,
-				platformConfigurationService);
+		ErrorOccurrenceTab tab = new ErrorOccurrenceTab(errorReportingService, errorReportingManagementService,
+				platformConfigurationService, null, null);
 		tab.createLayout();
 		tab.applyFilter();
 		tab.search();

@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.ws.rs.client.Client;
@@ -84,6 +85,7 @@ import org.ikasan.spec.error.reporting.ErrorReportingService;
 import org.ikasan.spec.exclusion.ExclusionManagementService;
 import org.ikasan.topology.model.BusinessStream;
 import org.ikasan.topology.model.BusinessStreamFlow;
+import org.ikasan.topology.model.Component;
 import org.ikasan.topology.model.Flow;
 import org.ikasan.topology.model.Module;
 import org.ikasan.topology.model.Server;
@@ -132,7 +134,6 @@ public class ExclusionsTab extends TopologyTab
 	private PopupDateField fromDate;
 	private PopupDateField toDate;
 	
-	private ComboBox businessStreamCombo;
 	
 	private float splitPosition;
 	private Unit splitUnit;
@@ -152,15 +153,18 @@ public class ExclusionsTab extends TopologyTab
 	private HospitalService<byte[]> hospitalService;
 	
 	
-	public ExclusionsTab(ErrorReportingService errorReportingService, ErrorReportingManagementService errorReportingManagementService, ExclusionManagementService<ExclusionEvent, String> exclusionManagementService,
-			HospitalManagementService<ExclusionEventAction, ModuleActionedExclusionCount> hospitalManagementService, TopologyService topologyService, ComboBox businessStreamCombo, HospitalService<byte[]> hospitalService)
+	public ExclusionsTab(ErrorReportingService errorReportingService, ErrorReportingManagementService errorReportingManagementService, 
+			ExclusionManagementService<ExclusionEvent, String> exclusionManagementService,
+			HospitalManagementService<ExclusionEventAction, ModuleActionedExclusionCount> hospitalManagementService, 
+			TopologyService topologyService, HospitalService<byte[]> hospitalService,
+			HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.errorReportingService = errorReportingService;
 		this.errorReportingManagementService = errorReportingManagementService;
 		this.exclusionManagementService = exclusionManagementService;
 		this.hospitalManagementService = hospitalManagementService;
 		this.topologyService = topologyService;
-		this.businessStreamCombo = businessStreamCombo;
 		this.hospitalService = hospitalService;
 	}
 	

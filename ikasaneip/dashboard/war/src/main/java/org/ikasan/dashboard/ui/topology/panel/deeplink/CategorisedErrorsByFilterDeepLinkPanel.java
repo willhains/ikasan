@@ -167,7 +167,7 @@ public class CategorisedErrorsByFilterDeepLinkPanel extends UI
 		
 		CategorisedErrorTab tab = new CategorisedErrorTab(errorCategorisationService,
 				errorReportingManagementService, hospitalManagementService, topologyService, 
-				exclusionManagementService, platformConfigurationService, false);
+				exclusionManagementService, platformConfigurationService, false, null, null);
 		
 		tab.createLayout();
 		tab.applyFilter();

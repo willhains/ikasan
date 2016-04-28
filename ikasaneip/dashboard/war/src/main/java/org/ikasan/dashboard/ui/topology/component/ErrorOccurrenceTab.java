@@ -48,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -122,7 +123,6 @@ public class ErrorOccurrenceTab extends TopologyTab
 	private PopupDateField errorFromDate;
 	private PopupDateField errorToDate;
 	
-	private ComboBox businessStreamCombo;
 	
 	private float splitPosition;
 	private Unit splitUnit;
@@ -141,9 +141,11 @@ public class ErrorOccurrenceTab extends TopologyTab
 	private String jiraClipboard;
 	
 	public ErrorOccurrenceTab(ErrorReportingService errorReportingService,
-			ComboBox businessStreamCombo, ErrorReportingManagementService errorReportingManagementService,
-			PlatformConfigurationService platformConfigurationService)
+			ErrorReportingManagementService errorReportingManagementService,
+			PlatformConfigurationService platformConfigurationService,
+			HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.errorReportingService = errorReportingService;
 		if(this.errorReportingService == null)
 		{
@@ -159,8 +161,6 @@ public class ErrorOccurrenceTab extends TopologyTab
 		{
 			throw new IllegalArgumentException("platformConfigurationService cannot be null!");
 		}
-		
-		this.businessStreamCombo = businessStreamCombo;
 	}
 	
 	protected IndexedContainer buildContainer() 
@@ -812,19 +812,6 @@ public class ErrorOccurrenceTab extends TopologyTab
         	{
         		componentNames.add(((Component)component).getName());
         	}
-    	}
-    	
-    	if(modulesNames == null && flowNames == null && componentNames == null && businessStreamCombo != null
-    			&& !((BusinessStream)businessStreamCombo.getValue()).getName().equals("All"))
-    	{
-    		BusinessStream businessStream = ((BusinessStream)businessStreamCombo.getValue());
-    		
-    		modulesNames = new ArrayList<String>();
-    		
-    		for(BusinessStreamFlow flow: businessStream.getFlows())
-    		{
-    			modulesNames.add(flow.getFlow().getModule().getName());
-    		}
     	}
     	
 		List<ErrorOccurrence> errorOccurences = errorReportingService

@@ -117,7 +117,6 @@ public class WiretapTab extends TopologyTab
 	private PopupDateField fromDate;
 	private PopupDateField toDate;
 	
-	private ComboBox businessStreamCombo;
 	private TextField eventId;
 	private TextField payloadContent;
 	
@@ -136,11 +135,12 @@ public class WiretapTab extends TopologyTab
 	
 	private PlatformConfigurationService platformConfigurationService;
 	
-	public WiretapTab(WiretapDao wiretapDao, ComboBox businessStreamCombo,
-			PlatformConfigurationService platformConfigurationService)
+	public WiretapTab(WiretapDao wiretapDao, PlatformConfigurationService platformConfigurationService,
+			HashMap<String, Flow> flowMap, HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
+		
 		this.wiretapDao = wiretapDao;
-		this.businessStreamCombo = businessStreamCombo;
 		this.platformConfigurationService = platformConfigurationService;
 		
 		tableContainer = this.buildContainer();

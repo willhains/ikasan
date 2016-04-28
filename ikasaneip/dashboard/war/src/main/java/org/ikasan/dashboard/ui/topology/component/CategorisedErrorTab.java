@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -166,8 +167,10 @@ public class CategorisedErrorTab extends TopologyTab
 			ErrorReportingManagementService errorReportingManagementService,
 			HospitalManagementService<ExclusionEventAction, ModuleActionedExclusionCount> hospitalManagementService,
 			TopologyService topologyService, ExclusionManagementService<ExclusionEvent, String> exclusionManagementService,
-			PlatformConfigurationService platformConfigurationService, boolean showFilter)
+			PlatformConfigurationService platformConfigurationService, boolean showFilter, HashMap<String, Flow> flowMap, 
+			HashMap<String, Component> componentMap)
 	{
+		super(flowMap, componentMap);
 		this.errorCategorisationService = errorCategorisationService;
 		this.errorReportingManagementService = errorReportingManagementService;
 		this.hospitalManagementService = hospitalManagementService;
