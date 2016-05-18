@@ -41,6 +41,8 @@
 package org.ikasan.spec.wiretap;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -82,6 +84,14 @@ public interface WiretapService<RUNTIMEEVENT,PAGEDRESULT>
      * @return <code>WiretapFlowEvent</code>
      */
     public WiretapEvent getWiretapEvent(Long wiretapEventId);
+    
+    /**
+     * Get a list Map or WiretapEvents with life id as key and event as value.
+     * 
+     * @param lifeIds
+     * @return
+     */
+    public Map<String, WiretapEvent> getWiretapEventsByLifeId(List<String> lifeIds);
 
     /**
      * dumps a snapshot of an <code>FlowEvent</code> at runtime in the form of one

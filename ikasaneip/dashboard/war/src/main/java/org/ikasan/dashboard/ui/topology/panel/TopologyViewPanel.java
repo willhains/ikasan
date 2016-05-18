@@ -74,6 +74,7 @@ import org.ikasan.dashboard.ui.topology.component.CategorisedErrorTab;
 import org.ikasan.dashboard.ui.topology.component.ErrorOccurrenceTab;
 import org.ikasan.dashboard.ui.topology.component.ExclusionsTab;
 import org.ikasan.dashboard.ui.topology.component.FilterManagementTab;
+import org.ikasan.dashboard.ui.topology.component.MetricsTab;
 import org.ikasan.dashboard.ui.topology.component.TopologyTab;
 import org.ikasan.dashboard.ui.topology.component.WiretapTab;
 import org.ikasan.dashboard.ui.topology.util.FilterMap;
@@ -96,6 +97,9 @@ import org.ikasan.spec.configuration.PlatformConfigurationService;
 import org.ikasan.spec.error.reporting.ErrorReportingManagementService;
 import org.ikasan.spec.error.reporting.ErrorReportingService;
 import org.ikasan.spec.exclusion.ExclusionManagementService;
+import org.ikasan.spec.flow.FlowInvocationContext;
+import org.ikasan.spec.history.MessageHistoryEvent;
+import org.ikasan.spec.history.MessageHistoryService;
 import org.ikasan.spec.module.StartupControlService;
 import org.ikasan.spec.search.PagedSearchResult;
 import org.ikasan.systemevent.model.SystemEvent;
@@ -178,6 +182,7 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
     public static final String ACTIONED_ERROR_TAB = "actionErrorOccurrence";
     public static final String EVENT_EXCLUSION_TAB = "eventExclusion";
     public static final String ACTIONED_EVENT_EXCLUSION_TAB = "actionedEventExclusion";
+    public static final String METRICS_TAB = "metricsTab";
     public static final String CATEGORISED_ERROR_TAB = "categorisedError";
     
 	/**
@@ -267,6 +272,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 	private HashMap<String, Flow> flowMap = new HashMap<String, Flow>();
 	private HashMap<String, Component> componentMap = new HashMap<String, Component>();
 	
+	private MessageHistoryService<FlowInvocationContext, PagedSearchResult<MessageHistoryEvent>> messageHistoryService;
+	
 	
 	
 	public TopologyViewPanel(TopologyService topologyService, ComponentConfigurationWindow componentConfigurationWindow,
@@ -274,7 +281,8 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			 HospitalManagementService<ExclusionEventAction, ModuleActionedExclusionCount> hospitalManagementService, SystemEventService systemEventService,
 			 ErrorCategorisationService errorCategorisationService, TriggerManagementService triggerManagementService, TopologyStateCache topologyCache,
 			 StartupControlService startupControlService, ErrorReportingService errorReportingService, ErrorReportingManagementService errorReportingManagementService,
-			 PlatformConfigurationService platformConfigurationService, SecurityService securityService, HospitalService<byte[]> hospitalService, FlowConfigurationWindow flowConfigurationWindow)
+			 PlatformConfigurationService platformConfigurationService, SecurityService securityService, HospitalService<byte[]> hospitalService, FlowConfigurationWindow flowConfigurationWindow,
+			 MessageHistoryService<FlowInvocationContext, PagedSearchResult<MessageHistoryEvent>> messageHistoryService)
 	{
 		this.topologyService = topologyService;
 		if(this.topologyService == null)
@@ -355,6 +363,11 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 		if(this.flowConfigurationWindow == null)
 		{
 			throw new IllegalArgumentException("flowConfigurationWindow cannot be null!");
+		}
+		this.messageHistoryService = messageHistoryService;
+		if(this.messageHistoryService == null)
+		{
+			throw new IllegalArgumentException("messageHistoryService cannot be null!");
 		}
 		
 		
@@ -511,6 +524,21 @@ public class TopologyViewPanel extends Panel implements View, Action.Handler
 			tabsheet.addTab(actionedExclusionTab, "Actioned Exclusions");
 			
 			tabComponentMap.put(ACTIONED_EVENT_EXCLUSION_TAB, actionedExclusionTab);
+    	}
+    	
+    	if(authentication != null 
+    			&& (authentication.hasGrantedAuthority(SecurityConstants.ALL_AUTHORITY)
+    					|| authentication.hasGrantedAuthority(SecurityConstants.VIEW_METRICS_AUTHORITY)))
+    	{		
+    		MetricsTab metricsTab = new MetricsTab
+					(this.messageHistoryService, this.platformConfigurationService, this.wiretapDao,
+							this.flowMap, this.componentMap);
+    		metricsTab.createLayout();
+			metricsTab.applyFilter();
+			
+			tabsheet.addTab(metricsTab, "Metrics");
+			
+			tabComponentMap.put(METRICS_TAB, metricsTab);
     	}
 		
     	if(authentication != null 

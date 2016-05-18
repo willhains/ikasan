@@ -41,6 +41,8 @@
 package org.ikasan.wiretap.dao;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.ikasan.spec.search.PagedSearchResult;
@@ -110,6 +112,14 @@ public interface WiretapDao
      * @return WiretapFlowEvent
      */
     public WiretapEvent findById(Long id);
+    
+    /**
+     * Get a list Map or WiretapEvents with life id as key and event as value.
+     * 
+     * @param lifeIds
+     * @return
+     */
+    public Map<String, WiretapEvent> getWiretapEventsByLifeId(List<String> lifeIds);
 
     /**
      * Deletes all WiretapFlowEvents that have surpassed their expiryDate

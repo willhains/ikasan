@@ -41,6 +41,8 @@
 package org.ikasan.wiretap.service;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -227,4 +229,13 @@ public class WiretapServiceImpl implements WiretapService<FlowEvent,PagedSearchR
         long endTime = System.currentTimeMillis();
         logger.info("wiretap housekeep completed in ["+(endTime-startTime)+" ms]");
     }
+
+	/* (non-Javadoc)
+	 * @see org.ikasan.spec.wiretap.WiretapService#getWiretapEventsByLifeId(java.util.List)
+	 */
+	@Override
+	public Map<String, WiretapEvent> getWiretapEventsByLifeId(List<String> lifeIds) 
+	{
+		return this.wiretapDao.getWiretapEventsByLifeId(lifeIds);
+	}
 }

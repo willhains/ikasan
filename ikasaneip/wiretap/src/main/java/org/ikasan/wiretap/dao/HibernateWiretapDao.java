@@ -42,10 +42,16 @@ package org.ikasan.wiretap.dao;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.*;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
@@ -346,6 +352,40 @@ public class HibernateWiretapDao extends HibernateDaoSupport implements WiretapD
             }
         });
     }
+    
+    /* (non-Javadoc)
+	 * @see org.ikasan.wiretap.dao.WiretapDao#getWiretapEventsByLifeId(java.util.List)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public Map<String, WiretapEvent> getWiretapEventsByLifeId(final List<String> lifeIds) 
+	{
+		return (Map<String, WiretapEvent>) getHibernateTemplate().execute(new HibernateCallback<Object>()
+        {
+            public Object doInHibernate(Session session) throws HibernateException
+            {
+            	Map<String, WiretapEvent> results = new HashMap<String, WiretapEvent>();
+            	
+            	    final int listSize = lifeIds.size();
+            	    int chunckSize  = 200;
+            	    for (int i = 0; i < listSize; i += chunckSize) 
+            	    {            	    	
+            	    	Criteria criteria = session.createCriteria(WiretapEvent.class);
+            	    	criteria.add(Restrictions.in("eventId", lifeIds.subList(i, Math.min(listSize, i + chunckSize))));
+            	    	
+            	    	List<WiretapEvent> wiretapResults = criteria.list();
+            	    	
+            	    	for(WiretapEvent event: wiretapResults)
+            	    	{
+            	    		results.put(event.getModuleName() + event.getFlowName() +
+            	    				event.getComponentName() + ((WiretapFlowEvent)event).getEventId(), event);
+            	    	}
+            	    }
+
+            	return results;
+            }
+        });
+	}
 
     /**
      * Check to see if the restriction exists
@@ -395,7 +435,8 @@ public class HibernateWiretapDao extends HibernateDaoSupport implements WiretapD
      *  Loops, checking for housekeepable items. If they exist, it identifies a batch
      *  and attempts to delete that batch
      */
-    private void batchHousekeepDelete() {
+    private void batchHousekeepDelete() 
+    {
         logger.info("Wiretap batched housekeeper called");
 
         int numberDeleted = 0;
@@ -420,7 +461,6 @@ public class HibernateWiretapDao extends HibernateDaoSupport implements WiretapD
                 }
             });
         }
-
     }
 
 
@@ -450,8 +490,6 @@ public class HibernateWiretapDao extends HibernateDaoSupport implements WiretapD
             }
         });
     }
-
-
 
     public boolean isBatchHousekeepDelete()
     {
@@ -489,7 +527,8 @@ public class HibernateWiretapDao extends HibernateDaoSupport implements WiretapD
         this.transactionBatchSize = transactionBatchSize;
     }
 
-    @Override public void setHousekeepQuery(String housekeepQuery)
+    @Override 
+    public void setHousekeepQuery(String housekeepQuery)
     {
         this.housekeepQuery = housekeepQuery;
     }
