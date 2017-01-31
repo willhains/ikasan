@@ -1,0 +1,24 @@
+version: '2'
+
+services:
+  database:
+    extends:
+      file: services/database.yml
+      service: database
+    ports:
+      - "37017:27017"
+  springboot-service:
+    extends:
+      file: services/spring-boot-service.yml
+      service: springboot-service
+    ports:
+      - "8090:8080"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 192.168.25.0/24
+          iprange: 192.168.25.0/25
+          gateway: 192.168.25.1
+

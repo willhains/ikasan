@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  springboot-service:
+    image: digitalinside/springboot-service:latest
+    restart: always
+    ports:
+      - "4025:4025"
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "2"
