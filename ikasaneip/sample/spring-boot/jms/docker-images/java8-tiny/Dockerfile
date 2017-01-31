@@ -1,6 +1,7 @@
 FROM centos:7
 
-MAINTAINER Pixel <DL-team@digitalinside>
+LABEL Description="This image contains JDK8 - to be extended by image containing a Java application." Vendor="Ikasan" Version="1.0"
+LABEL MAINTAINER "team@ikasan.org"
 
 # Prerequisites.
 

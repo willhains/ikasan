@@ -1,18 +1,18 @@
 version: '2'
 
 services:
-  database:
+  wildfly:
     extends:
-      file: services/database.yml
-      service: database
+      file: services/wildfly.yml
+      service: wildfly
     ports:
-      - "37017:27017"
-  springboot-service:
-    extends:
-      file: services/spring-boot-service.yml
-      service: springboot-service
-    ports:
-      - "8090:8080"
+      - "9990:9990"
+#  springboot-service:
+#    extends:
+#      file: services/spring-boot-service.yml
+#      service: springboot-service
+#    ports:
+#      - "18080:18080"
 
 networks:
   default:

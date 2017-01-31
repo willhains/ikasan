@@ -19,7 +19,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <version.org.apache.tomcat>8.5.5</version.org.apache.tomcat>
+
+        <team.name>ikasan</team.name>
+        <docker.push.image>false</docker.push.image>
+        <artifact.shortname>springboot-service</artifact.shortname>
+        <project.exec.artifactId>${project.build.finalName}</project.exec.artifactId>
+
     </properties>
+
 
     <dependencyManagement>
         <dependencies>
@@ -302,6 +309,74 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.4.13</version>
+                <configuration>
+                    <imageName>${team.name}/${artifact.shortname}:latest</imageName>
+                    <dockerDirectory>${project.build.directory}/docker</dockerDirectory>
+                    <useConfigFile>true</useConfigFile>
+                    <pushImage>${docker.push.image}</pushImage>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                    </imageTags>
+                    <resources>
+                        <resource>
+                            <filtering>false</filtering>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                    <skipDockerBuild>false</skipDockerBuild>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-docker</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <resources>
+
+                                <resource>
+                                    <directory>docker</directory>
+                                    <targetPath>docker</targetPath>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>Dockerfile</include>
+                                        <include>init.sh</include>
+                                    </includes>
+                                </resource>
+
+                            </resources>
+                            <encoding>UTF-8</encoding>
+                            <delimiters>
+                                <delimiter>${*}</delimiter>
+                            </delimiters>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+
         </plugins>
     </build>
 

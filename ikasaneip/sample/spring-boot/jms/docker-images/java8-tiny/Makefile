@@ -1,8 +1,8 @@
 build-docker:
-	docker build -t digitalinside/java8-tiny:latest .
+	docker build -t ikasan/java8-tiny:latest .
 
 push:
-	docker push digitalinside/java8-tiny
+	docker push ikasan/java8-tiny
 
 help:
 	@echo 'Available commands: build, push'

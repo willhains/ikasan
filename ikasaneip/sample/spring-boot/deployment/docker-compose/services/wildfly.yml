@@ -1,9 +1,9 @@
 version: '2'
 
 services:
-  database:
-    image: mongo:3.2.4
-    container_name: spring-mongo
+  wildfly:
+    image: ikasan/wildfly:latest
+    container_name: wildfly
     restart: always
     logging:
       driver: json-file

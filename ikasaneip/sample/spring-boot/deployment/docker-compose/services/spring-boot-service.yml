@@ -2,10 +2,10 @@ version: '2'
 
 services:
   springboot-service:
-    image: digitalinside/springboot-service:latest
+    image: ikasan/springboot-service:latest
     restart: always
     ports:
-      - "4025:4025"
+      - "18080:18080"
     logging:
       driver: json-file
       options:
