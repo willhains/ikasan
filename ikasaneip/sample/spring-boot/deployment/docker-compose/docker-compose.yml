@@ -7,12 +7,12 @@ services:
       service: wildfly
     ports:
       - "9990:9990"
-#  springboot-service:
-#    extends:
-#      file: services/spring-boot-service.yml
-#      service: springboot-service
-#    ports:
-#      - "18080:18080"
+  springboot-service:
+    extends:
+      file: services/spring-boot-service.yml
+      service: springboot-service
+    ports:
+      - "18080:18080"
 
 networks:
   default:
