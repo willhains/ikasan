@@ -1,7 +1,7 @@
 batch
 
-jms-topic add --topic-address=testTarget --entries=queues/testTarget
+jms-topic add --topic-address=testTarget --entries=topics/testTarget
 
-jms-topic add --topic-address=testTarget --entries=queues/testSource
+jms-topic add --topic-address=testSource --entries=topics/testSource
 
 run-batch

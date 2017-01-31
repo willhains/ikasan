@@ -5,19 +5,11 @@ FROM jboss/wildfly:9.0.2.Final
 RUN /opt/jboss/wildfly/bin/add-user.sh admin admin --silent
 
 ADD config /opt/config
-ADD amq /opt/amq
 
 USER root
 RUN chmod +x /opt/config/execute.sh
 USER jboss
 
-RUN /opt/config/execute.sh commands.cli
-RUN unzip /opt/amq/activemq-rar-5.10.0.rar -d /opt/jboss/wildfly/modules/org/apache/activemq/main
-
-RUN rm -rf $JBOSS_HOME/standalone/configuration/standalone_xml_history
-RUN /opt/config/execute.sh add-activemq-rar.cli
-
-RUN rm -rf $JBOSS_HOME/standalone/configuration/standalone_xml_history
 RUN /opt/config/execute.sh topics.cli
 
 RUN rm -rf $JBOSS_HOME/standalone/configuration/standalone_xml_history

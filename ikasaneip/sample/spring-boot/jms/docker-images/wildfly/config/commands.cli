@@ -1,2 +1,0 @@
-
-module add --name=org.apache.activemq --module-xml=/opt/amq/activemq-module.xml
