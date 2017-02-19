@@ -51,6 +51,7 @@ import org.ikasan.spec.event.ForceTransactionRollbackException;
 import org.ikasan.spec.exclusion.ExclusionService;
 import org.ikasan.spec.flow.FinalAction;
 import org.ikasan.spec.flow.FlowElement;
+import org.ikasan.spec.flow.FlowEvent;
 import org.ikasan.spec.flow.FlowInvocationContext;
 import org.ikasan.spec.management.ManagedResource;
 import org.ikasan.exceptionResolver.action.ExceptionAction;
@@ -59,7 +60,9 @@ import org.quartz.*;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -107,10 +110,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
 
     /** exception resolver */
     private ExceptionResolver exceptionResolver;
-    
-    /** recovery attempts */
-    protected int recoveryAttempts;
-    
+
     /** keep a handle on the previous component name comparison */
     private String previousComponentName;
     
@@ -130,6 +130,10 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     private ErrorReportingService errorReportingService;
 
     private Long jobIdentifier = 0L;
+
+    /** Map to deal with recovery attempts over multiple threads */
+    protected Map<Object, Integer> recoveryAttempts;
+
 
     /**
      * Constructor
@@ -183,6 +187,8 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         {
             throw new IllegalArgumentException("errorReportingService cannot be null");
         }
+
+        this.recoveryAttempts = new HashMap<Object, Integer>();
     }
 
     /**
@@ -211,7 +217,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     {
         try
         {
-            if(this.scheduler.isStarted() && recoveryAttempts > 0)
+            if(this.scheduler.isStarted() && !this.recoveryAttempts.isEmpty())
             {
                 return true;
             }
@@ -225,13 +231,14 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     }
 
     /**
-     * Common resolution of the action for the componentName and throwable instance
+     *  Common resolution of the action for the componentName and throwable instance
      *
      * @param action
      * @param componentName
-     * @param throwable 
+     * @param throwable
+     * @param flowEvent
      */
-    protected void recover(ExceptionAction action, String componentName, Throwable throwable)
+    protected void recover(ExceptionAction action, String componentName, Throwable throwable, FlowEvent flowEvent)
     {
         if(action instanceof StopAction)
         {
@@ -261,19 +268,19 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             {
                 if(!isRecovering())
                 {
-                    startRecovery(retryAction);
+                    startRecovery(retryAction, flowEvent);
                 }
                 else
                 {
                     // TODO - not 100% identification of same issue, but sufficient
                     if(this.previousExceptionAction.equals(retryAction) && this.previousComponentName.equals(componentName))
                     {
-                        continueRecovery(retryAction);
+                        continueRecovery(retryAction, flowEvent);
                     }
                     else
                     {
                         cancelRecovery();
-                        startRecovery(retryAction);
+                        startRecovery(retryAction, flowEvent);
                     }
                 }
                 
@@ -300,19 +307,19 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             {
                 if(!isRecovering())
                 {
-                    startRecovery(scheduledRetryAction);
+                    startRecovery(scheduledRetryAction, flowEvent);
                 }
                 else
                 {
                     // TODO - not 100% identification of same issue, but sufficient
                     if(this.previousExceptionAction.equals(scheduledRetryAction) && this.previousComponentName.equals(componentName))
                     {
-                        continueRecovery(scheduledRetryAction);
+                        continueRecovery(scheduledRetryAction, flowEvent);
                     }
                     else
                     {
                         cancelRecovery();
-                        startRecovery(scheduledRetryAction);
+                        startRecovery(scheduledRetryAction, flowEvent);
                     }
                 }
 
@@ -334,6 +341,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
 
     /**
      * Execute recovery based on the specified component name and exception.
+     *
      * @param componentName
      * @param throwable
      */
@@ -347,21 +355,22 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         }
 
         this.errorReportingService.notify(componentName, throwable, action.toString());
-        this.recover(action, componentName, throwable);
+        this.recover(action, componentName, throwable, null);
     }
 
     /**
      * Execute recovery based on the specified flowInvocationContext, exception, event and event identifier.
+     *
      * @param flowInvocationContext
      * @param throwable
      * @param event
      * @param identifier
-     * @param <T>
+     * @param event
      * @param <TID>
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T,TID> void recover(FlowInvocationContext flowInvocationContext, Throwable throwable, T event, TID identifier)
+    public <TID> void recover(FlowInvocationContext flowInvocationContext, Throwable throwable, FlowEvent event, TID identifier)
     {
         String lastComponentName = flowInvocationContext.getLastComponentName();
         ExceptionAction action = resolveAction(lastComponentName, throwable);
@@ -378,7 +387,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
             throw new ForceTransactionRollbackException(action.toString(), throwable);
         }
 
-        this.recover(action, lastComponentName, throwable);
+        this.recover(action, lastComponentName, throwable, event);
     }
 
     protected FinalAction getFinalAction(ExceptionAction exceptionAction)
@@ -410,7 +419,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * @param retryAction
      * @throws SchedulerException
      */
-    private void startRecovery(RetryAction retryAction)
+    private void startRecovery(RetryAction retryAction, FlowEvent event)
         throws SchedulerException
     {
         JobDetail recoveryJobDetail = scheduledJobFactory.createJobDetail(this, ScheduledRecoveryManager.class, RECOVERY_JOB_NAME + this.flowName + Thread.currentThread().getId(), this.moduleName);
@@ -418,8 +427,16 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         Trigger recoveryJobTrigger = newRecoveryTrigger(retryAction.getDelay());
         Date scheduled = this.scheduler.scheduleJob(recoveryJobDetail, recoveryJobTrigger);
 
-        recoveryAttempts = 1;
-        logger.info("Recovery [" + recoveryAttempts + "/" 
+        if(event == null)
+        {
+            this.recoveryAttempts.put(Thread.currentThread().getId(), 1);
+        }
+        else
+        {
+            this.recoveryAttempts.put(event.getIdentifier(), 1);
+        }
+
+        logger.info("Recovery [" + recoveryAttempts + "/"
             + ((retryAction.getMaxRetries() < 0) ? "unlimited" : retryAction.getMaxRetries()) 
             + "] flow [" + flowName + "] module [" + moduleName + "] started at ["
             + scheduled + "]");
@@ -430,7 +447,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * @param scheduledRetryAction
      * @throws SchedulerException
      */
-    private void startRecovery(ScheduledRetryAction scheduledRetryAction)
+    private void startRecovery(ScheduledRetryAction scheduledRetryAction, FlowEvent event)
             throws SchedulerException
     {
         JobDetail recoveryJobDetail = scheduledJobFactory.createJobDetail(this, ScheduledRecoveryManager.class, RECOVERY_JOB_NAME + this.flowName + Thread.currentThread().getId(), this.moduleName);
@@ -438,7 +455,15 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
         Trigger recoveryJobTrigger = newRecoveryTrigger(scheduledRetryAction.getCronExpression());
         Date scheduled = this.scheduler.scheduleJob(recoveryJobDetail, recoveryJobTrigger);
 
-        recoveryAttempts = 1;
+        if(event == null)
+        {
+            this.recoveryAttempts.put(Thread.currentThread().getId(), 1);
+        }
+        else
+        {
+            this.recoveryAttempts.put(event.getIdentifier(), 1);
+        }
+
         logger.info("Recovery [" + recoveryAttempts + "/"
                 + ((scheduledRetryAction.getMaxRetries() < 0) ? "unlimited" : scheduledRetryAction.getMaxRetries())
                 + "] flow [" + flowName + "] module [" + moduleName + "] started at ["
@@ -449,9 +474,22 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * Continue an in progress recovery based on the retry action.
      * @param retryAction
      */
-    private void continueRecovery(RetryAction retryAction) throws SchedulerException
+    private void continueRecovery(RetryAction retryAction, FlowEvent event) throws SchedulerException
     {
-        recoveryAttempts++;
+        int recoveryAttempts = -1;
+
+        if(event == null)
+        {
+            recoveryAttempts = this.recoveryAttempts.get(Thread.currentThread().getId());
+            recoveryAttempts++;
+            this.recoveryAttempts.put(Thread.currentThread().getId(), recoveryAttempts);
+        }
+        else
+        {
+            recoveryAttempts = this.recoveryAttempts.get(event.getIdentifier());
+            recoveryAttempts++;
+            this.recoveryAttempts.put(event, recoveryAttempts);
+        }
 
         if(retryAction.getMaxRetries() != RetryAction.RETRY_INFINITE && recoveryAttempts > retryAction.getMaxRetries())
         {
@@ -491,9 +529,22 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      * Continue an in progress recovery based on the retry action.
      * @param scheduledRetryAction
      */
-    private void continueRecovery(ScheduledRetryAction scheduledRetryAction) throws SchedulerException
+    private void continueRecovery(ScheduledRetryAction scheduledRetryAction, FlowEvent event) throws SchedulerException
     {
-        recoveryAttempts++;
+        int recoveryAttempts = -1;
+
+        if(event == null)
+        {
+            recoveryAttempts = this.recoveryAttempts.get(Thread.currentThread().getId());
+            recoveryAttempts++;
+            this.recoveryAttempts.put(Thread.currentThread().getId(), recoveryAttempts);
+        }
+        else
+        {
+            recoveryAttempts = this.recoveryAttempts.get(event.getIdentifier());
+            recoveryAttempts++;
+            this.recoveryAttempts.put(event, recoveryAttempts);
+        }
 
         if(scheduledRetryAction.getMaxRetries() != RetryAction.RETRY_INFINITE && recoveryAttempts > scheduledRetryAction.getMaxRetries())
         {
@@ -513,7 +564,7 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
      */
     private void cancelRecovery()
     {
-        recoveryAttempts = 0;
+        this.recoveryAttempts.clear();
 
         try
         {
@@ -540,7 +591,8 @@ public class ScheduledRecoveryManager implements RecoveryManager<ExceptionResolv
     public void initialise()
     {
         this.isUnrecoverable = false;
-        this.recoveryAttempts = 0;
+
+        this.recoveryAttempts.clear();
         this.previousComponentName = null;
         this.previousExceptionAction = null;
     }

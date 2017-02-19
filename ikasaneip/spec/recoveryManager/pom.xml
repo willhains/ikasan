@@ -56,4 +56,14 @@
     <packaging>jar</packaging>
     <name>Ikasan Specification Recovery Manager Contracts</name>
     <description>The specification recovery manager contracts for the Ikasan Enterprise Integration Platform</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.ikasan</groupId>
+            <artifactId>ikasan-spec-flow</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+    </dependencies>
 </project>

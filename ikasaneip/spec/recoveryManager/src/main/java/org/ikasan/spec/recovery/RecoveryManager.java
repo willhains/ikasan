@@ -40,6 +40,8 @@
  */
 package org.ikasan.spec.recovery;
 
+import org.ikasan.spec.flow.FlowEvent;
+
 /**
  * Recovery Manager contract.
  * 
@@ -74,10 +76,10 @@ public interface RecoveryManager<RESOLVER, CONTEXT>
      * @param throwable
      * @param event
      * @param identifier
-     * @param <EVENT>
+     * @param event
      * @param <IDENTIFIER>
      */
-    public <EVENT,IDENTIFIER> void recover(CONTEXT context, Throwable throwable, EVENT event, IDENTIFIER identifier);
+    public <IDENTIFIER> void recover(CONTEXT context, Throwable throwable, FlowEvent event, IDENTIFIER identifier);
 
     /**
      * Start or continue a recovery based on the passed CRITERIA.

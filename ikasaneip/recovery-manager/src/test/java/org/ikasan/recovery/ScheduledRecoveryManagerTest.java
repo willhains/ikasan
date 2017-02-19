@@ -959,7 +959,7 @@ public class ScheduledRecoveryManagerTest
          */
         protected int getRetryAttempts()
         {
-            return this.recoveryAttempts;
+            return recoveryAttempts.get(Thread.currentThread().getId()) == null ? 0 : recoveryAttempts.get(Thread.currentThread().getId());
         }
     }
 

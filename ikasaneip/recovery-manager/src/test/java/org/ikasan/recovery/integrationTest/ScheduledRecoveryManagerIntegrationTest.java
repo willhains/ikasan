@@ -263,7 +263,7 @@ public class ScheduledRecoveryManagerIntegrationTest
 
         try
         {
-            recoveryManager.recover(flowInvocationContext, new Exception(), "", "");
+            recoveryManager.recover(flowInvocationContext, new Exception(), null, "");
         }
         catch (Exception e)
         {
